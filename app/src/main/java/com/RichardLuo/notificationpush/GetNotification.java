@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.os.StrictMode;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
-import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -16,6 +15,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 public class GetNotification extends NotificationListenerService {
+    protected final String Authorization = "";
+    protected final String Sender = "";
     public String inputID;
 
     @Override
@@ -26,7 +27,7 @@ public class GetNotification extends NotificationListenerService {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         inputID = MainActivity.inputID.trim();
-        return super.onStartCommand(intent,flags,startId);
+        return super.onStartCommand(intent, flags, startId);
     }
 
     @Override
@@ -41,17 +42,17 @@ public class GetNotification extends NotificationListenerService {
             connection = (HttpURLConnection) url.openConnection();
             connection.setDoOutput(true);
             connection.setRequestMethod("POST");
-            connection.setRequestProperty("Content-Type","application/json");
-            connection.setRequestProperty("Authorization","key=AIzaSyDJ_--RTncjiM-aqJzTRx8cqgla77yv7Ag");
-            connection.setRequestProperty("Sender","id=657560725798");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Authorization", Authorization);
+            connection.setRequestProperty("Sender", Sender);
             connection.connect();
             DataOutputStream out = new DataOutputStream(connection.getOutputStream());
             JSONObject obj = new JSONObject();
             JSONObject content = new JSONObject();
-            content.put("title",oneNotification.extras.getString(Notification.EXTRA_TITLE, "无标题") + " ・ " + sbn.getPackageName());
-            content.put("body",oneNotification.extras.getString(Notification.EXTRA_TEXT, "无内容"));
-            obj.put("to",inputID);
-            obj.put("notification",content);
+            content.put("title", oneNotification.extras.getString(Notification.EXTRA_TITLE, "无标题") + " ・ " + sbn.getPackageName());
+            content.put("body", oneNotification.extras.getString(Notification.EXTRA_TEXT, "无内容"));
+            obj.put("to", inputID);
+            obj.put("notification", content);
             String json = obj.toString();
             out.write(json.getBytes());
             out.flush();
