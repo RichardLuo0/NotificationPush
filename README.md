@@ -19,10 +19,10 @@ This app is for forwarding your notification from one phone to another using the
 ### Only for users from China
 * 服务端可能必须24小时挂梯！
 
-# if you want to compiler by yourself
+# if you want to compile by yourself
 * 下载源码(Download the source code)
 * 在firebase中建立新项目(Create a new project in firebase)
 * 根据Google的firebase文档加入google-services.json文件(Add google-services.json file according to the official document of Google)
 * 修改NotificationPush/app/src/main/java/com/RichardLuo/notificationpush/GetNotification.java中的常量Authorization和Sender为自己相应内容,你应该参照旧版fcm推送方法进行修改！
 (Change the constant 'Authorization' and 'Sender' to what you have in firebase console(old one))
-* 编译(Compiler)
+* 编译(Compile)
