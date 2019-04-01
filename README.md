@@ -23,6 +23,6 @@ This app is for forwarding your notification from one phone to another using the
 * 下载源码(Download the source code)
 * 在firebase中建立新项目(Create a new project in firebase)
 * 根据Google的firebase文档加入google-services.json文件(Add google-services.json file according to the official document of Google)
-* 修改NotificationPush/app/src/main/java/com/RichardLuo/notificationpush/GetNotification.java中的常量Authorization和Sender为自己相应内容
+* 修改NotificationPush/app/src/main/java/com/RichardLuo/notificationpush/GetNotification.java中的常量Authorization和Sender为自己相应内容,你应该参照旧版fcm推送方法进行填充！
 (Change the constant 'Authorization' and 'Sender' to what you have in firebase console)
 * 编译(Compiler)
