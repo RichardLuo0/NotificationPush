@@ -4,14 +4,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:paddingStart="10dp"
+    android:paddingEnd="10dp"
     tools:context=".MainActivity">
 
     <Switch
         android:id="@+id/switch1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp"
         android:paddingTop="10dp"
         android:paddingBottom="10dp"
         android:text="@string/start"
@@ -24,8 +24,6 @@
         android:hint="@string/DeviceID"
         android:importantForAutofill="no"
         android:inputType="textMultiLine|text"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp"
         android:scrollHorizontally="false"
         android:singleLine="false"
         android:textColor="@android:color/black"
@@ -35,7 +33,5 @@
         android:id="@+id/textView"
         android:layout_width="match_parent"
         android:layout_height="120dp"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp"
         android:textIsSelectable="true" />
 </LinearLayout>

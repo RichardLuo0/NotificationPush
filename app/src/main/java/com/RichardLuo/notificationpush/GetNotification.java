@@ -32,10 +32,12 @@ public class GetNotification extends NotificationListenerService {
 
     @Override
     public void onNotificationPosted(StatusBarNotification sbn) {
-        if (sbn.getPackageName().equals("com.RichardLuo.notificationpush") || inputID == null) {
+        if (sbn.getPackageName().equals("com.RichardLuo.notificationpush") || inputID == null)
             return;
-        }
         Notification oneNotification = sbn.getNotification();
+        String title = oneNotification.extras.getString(Notification.EXTRA_TITLE, "无标题");
+        String text = oneNotification.extras.getString(Notification.EXTRA_TEXT, "无内容");
+        if (title.contains("正在运行") || title.contains("running")) return;
         HttpURLConnection connection;
         try {
             URL url = new URL("https://fcm.googleapis.com/fcm/send");
@@ -43,14 +45,14 @@ public class GetNotification extends NotificationListenerService {
             connection.setDoOutput(true);
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "application/json");
-            connection.setRequestProperty("Authorization", Authorization);
-            connection.setRequestProperty("Sender", Sender);
+            connection.setRequestProperty("Authorization", "key=" + Authorization);
+            connection.setRequestProperty("Sender", "id=" + Sender);
             connection.connect();
             DataOutputStream out = new DataOutputStream(connection.getOutputStream());
             JSONObject obj = new JSONObject();
             JSONObject content = new JSONObject();
-            content.put("title", oneNotification.extras.getString(Notification.EXTRA_TITLE, "无标题") + " ・ " + sbn.getPackageName());
-            content.put("body", oneNotification.extras.getString(Notification.EXTRA_TEXT, "无内容"));
+            content.put("title", title + " ・ " + sbn.getPackageName());
+            content.put("body", text);
             obj.put("to", inputID);
             obj.put("notification", content);
             String json = obj.toString();

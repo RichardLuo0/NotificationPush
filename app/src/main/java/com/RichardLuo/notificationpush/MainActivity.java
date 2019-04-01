@@ -3,10 +3,10 @@ package com.RichardLuo.notificationpush;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.CompoundButton;
 import android.widget.EditText;
@@ -48,8 +48,8 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
                     }
                 });
         startService(new Intent(this, FCMReceiver.class));
-        preferences=getPreferences(MODE_PRIVATE);
-        input.setText(preferences.getString("ID",""));
+        preferences = getPreferences(MODE_PRIVATE);
+        input.setText(preferences.getString("ID", ""));
     }
 
     @Override
@@ -70,15 +70,14 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         if (isChecked) {
             if (isEnabled) {
-                if (! input.getText().toString().trim().isEmpty()) {
+                if (!input.getText().toString().trim().isEmpty()) {
                     inputID = input.getText().toString();
-                    editor=preferences.edit();
-                    editor.putString("ID",inputID);
+                    editor = preferences.edit();
+                    editor.putString("ID", inputID);
                     editor.apply();
                     startService(service);
-                }
-                else {
-                    Toast.makeText(this,"请填写设备ID",Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "请填写设备ID", Toast.LENGTH_SHORT).show();
                     Swh.setChecked(false);
                 }
             } else {
