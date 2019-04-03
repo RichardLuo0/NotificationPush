@@ -3,12 +3,11 @@
 
 This app is for forwarding your notification from one phone to another using the fcm tunnel
 
-## What you need
+## What do you need
 * 一台旧手机作为服务器(An old phone used as server)
 * 一台可以接收fcm推送的主力机(Your daily phone which could receive fcm push)
-* 完成！(finish!)
 
-## What you need to do
+## What do you need to do
 * 下载最新release(Download the latest release)
 * 为两台手机安装(Install for both phones)
 * 将主力机上的token（就是那堆乱码）复制到server的输入框中(Copy the token from daily phone to the input box on the server)
