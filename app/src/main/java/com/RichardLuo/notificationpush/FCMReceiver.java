@@ -21,6 +21,12 @@ public class FCMReceiver extends FirebaseMessagingService {
         String title = remoteMessage.getData().get("title");
         String body = remoteMessage.getData().get("body");
         String packageName = remoteMessage.getData().get("package");
+        /*此处定义服务端的app与客户端如何对应（例如qq一类无法同时登陆同一账号）
+        switch (packageName) {
+            case "com.tencent.minihd.qq":
+                packageName = "com.tencent.mobileqq";
+                break;
+        }*/
         NotificationChannel mChannel;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
@@ -31,11 +37,7 @@ public class FCMReceiver extends FirebaseMessagingService {
         }
         NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(this);
         int id = Integer.valueOf(remoteMessage.getData().get("id"));
-        /*switch (packageName) {
-            case "com.tencent.minihd.qq":
-                packageName = "com.tencent.mobileqq";
-                break;
-        }*/
+
         PendingIntent intent = null;
         if (isAppInstalled(packageName))
             intent = PendingIntent.getActivity(this, 200, getPackageManager().getLaunchIntentForPackage(packageName), FLAG_UPDATE_CURRENT);
