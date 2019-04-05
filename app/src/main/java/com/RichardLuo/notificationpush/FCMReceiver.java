@@ -37,7 +37,6 @@ public class FCMReceiver extends FirebaseMessagingService {
         }
         NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(this);
         int id = Integer.valueOf(remoteMessage.getData().get("id"));
-
         PendingIntent intent = null;
         if (isAppInstalled(packageName))
             intent = PendingIntent.getActivity(this, 200, getPackageManager().getLaunchIntentForPackage(packageName), FLAG_UPDATE_CURRENT);
@@ -48,6 +47,7 @@ public class FCMReceiver extends FirebaseMessagingService {
                         .setSummaryText(packageName))
                 .setGroup(packageName)
                 .setGroupSummary(true)
+                .setContentIntent(intent)
                 .setAutoCancel(true)
                 .build();
         notificationManagerCompat.notify(StringToA(packageName), summary);
@@ -56,8 +56,8 @@ public class FCMReceiver extends FirebaseMessagingService {
                 .setColor(getColor(R.color.colorPrimary))
                 .setContentTitle(title)
                 .setContentText(body)
-                .setContentIntent(intent)
                 .setGroup(packageName)
+                .setContentIntent(intent)
                 .setAutoCancel(true)
                 .build();
         notificationManagerCompat.notify(id, notification);
