@@ -51,10 +51,12 @@ public class GetNotification extends NotificationListenerService {
             DataOutputStream out = new DataOutputStream(connection.getOutputStream());
             JSONObject obj = new JSONObject();
             JSONObject content = new JSONObject();
-            content.put("title", title + " ・ " + sbn.getPackageName());
+            content.put("title", title);
             content.put("body", text);
+            content.put("package",sbn.getPackageName());
+            content.put("id",sbn.getId());
             obj.put("to", inputID);
-            obj.put("notification", content);
+            obj.put("data", content);
             String json = obj.toString();
             out.write(json.getBytes());
             out.flush();

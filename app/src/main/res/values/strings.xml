@@ -3,4 +3,5 @@
     <string name="service_name">GetNotification</string>
     <string name="start">start</string>
     <string name="DeviceID">DeviceID</string>
+    <string name="clear">remove all channels</string>
 </resources>

@@ -1,13 +1,18 @@
 package com.RichardLuo.notificationpush;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
+import android.view.View;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.Switch;
@@ -24,6 +29,7 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
     Switch Swh;
     EditText input;
     TextView DeviceID;
+    Button clear;
     public static String inputID;
     SharedPreferences preferences;
     SharedPreferences.Editor editor;
@@ -35,6 +41,19 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
         Swh = findViewById(R.id.switch1);
         input = findViewById(R.id.editText);
         DeviceID = findViewById(R.id.textView);
+        clear = findViewById(R.id.clear);
+        final NotificationManager notificationManager = getSystemService(NotificationManager.class);
+        clear.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    for (NotificationChannel channel : notificationManager.getNotificationChannels()
+                    ) {
+                        notificationManager.deleteNotificationChannel(channel.getId());
+                    }
+                }
+            }
+        });
         Swh.setOnCheckedChangeListener(this);
         FirebaseInstanceId.getInstance().getInstanceId()
                 .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
