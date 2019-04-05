@@ -48,6 +48,7 @@ public class FCMReceiver extends FirebaseMessagingService {
                         .setSummaryText(packageName))
                 .setGroup(packageName)
                 .setGroupSummary(true)
+                .setAutoCancel(true)
                 .build();
         notificationManagerCompat.notify(StringToA(packageName), summary);
         Notification notification = new NotificationCompat.Builder(this, packageName)
