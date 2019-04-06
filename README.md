@@ -11,7 +11,7 @@ This app is for forwarding your notification from one phone to another using the
 * 下载最新release(Download the latest release)
 * 为两台手机安装(Install for both phones)
 * 将主力机上的token（就是那堆乱码）复制到server的输入框中(Copy the token from daily phone to the input box on the server)
-* 取消电池优化(It's may be necessary to turn off the battery optimization)
+* 取消电池优化(It may be necessary to turn off the battery optimization)
 * 在服务端切换start开关并授予相关权限(Switch the 'start' and allow the permission on server)
 * 现在，你应该能收到推送了(Now,you should have been able to receive the notification)
 
