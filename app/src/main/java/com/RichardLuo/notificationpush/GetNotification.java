@@ -53,8 +53,8 @@ public class GetNotification extends NotificationListenerService {
             JSONObject content = new JSONObject();
             content.put("title", title);
             content.put("body", text);
-            content.put("package",sbn.getPackageName());
-            content.put("id",sbn.getId());
+            content.put("package", sbn.getPackageName());
+            content.put("id", sbn.getId());
             obj.put("to", inputID);
             obj.put("data", content);
             String json = obj.toString();
