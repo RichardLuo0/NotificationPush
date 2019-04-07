@@ -42,11 +42,11 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
         input = findViewById(R.id.editText);
         DeviceID = findViewById(R.id.textView);
         clear = findViewById(R.id.clear);
-        final NotificationManager notificationManager = getSystemService(NotificationManager.class);
         clear.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    final NotificationManager notificationManager = getSystemService(NotificationManager.class);
                     for (NotificationChannel channel : notificationManager.getNotificationChannels()
                     ) {
                         notificationManager.deleteNotificationChannel(channel.getId());

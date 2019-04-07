@@ -20,9 +20,20 @@ import static android.app.NotificationManager.IMPORTANCE_DEFAULT;
 import static android.app.PendingIntent.FLAG_UPDATE_CURRENT;
 
 public class FCMReceiver extends FirebaseMessagingService {
+    int color = 0;
+    NotificationManagerCompat notificationManagerCompat;
+
+    @Override
+    public void onCreate() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M)
+            color = getColor(R.color.colorPrimary);
+        else
+            color = getResources().getColor(R.color.colorPrimary);
+        notificationManagerCompat = NotificationManagerCompat.from(this);
+    }
+
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
-        NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(this);
         String title = remoteMessage.getData().get("title");
         String body = remoteMessage.getData().get("body");
         int id = Integer.valueOf(remoteMessage.getData().get("id"));
@@ -35,14 +46,14 @@ public class FCMReceiver extends FirebaseMessagingService {
             case "com.tencent.tim":
             case "com.tencent.mobileqq":
                 packageName = "com.tencent.mobileqq";
-                forQQ(packageName, title, body, getIntent(packageName), id, notificationManagerCompat);
+                forQQ(packageName, title, body, getIntent(packageName), notificationManagerCompat);
                 return;
         }
         CheckChannel(packageName);
         PendingIntent intent = getIntent(packageName);
         Notification summary = new NotificationCompat.Builder(this, packageName)
                 .setSmallIcon(R.drawable.ic_notification)
-                .setColor(getColor(R.color.colorPrimary))
+                .setColor(color)
                 .setStyle(new NotificationCompat.BigTextStyle()
                         .setSummaryText(packageName))
                 .setGroup(packageName)
@@ -50,17 +61,17 @@ public class FCMReceiver extends FirebaseMessagingService {
                 .setContentIntent(intent)
                 .setAutoCancel(true)
                 .build();
-        notificationManagerCompat.notify(StringToA(packageName), summary);
+        notificationManagerCompat.notify(packageName, 0, summary);
         Notification notification = new NotificationCompat.Builder(this, packageName)
                 .setSmallIcon(R.drawable.ic_notification)
-                .setColor(getColor(R.color.colorPrimary))
+                .setColor(color)
                 .setContentTitle(title)
                 .setContentText(body)
                 .setGroup(packageName)
                 .setContentIntent(intent)
                 .setAutoCancel(true)
                 .build();
-        notificationManagerCompat.notify(id, notification);
+        notificationManagerCompat.notify(packageName, id, notification);
     }
 
     public boolean isAppInstalled(String packageName) {
@@ -101,36 +112,53 @@ public class FCMReceiver extends FirebaseMessagingService {
         return intent;
     }
 
-    public Notification getCurrentNotification(int id) {
-        StatusBarNotification[] sbns = getSystemService(NotificationManager.class).getActiveNotifications();
+    public Notification getCurrentNotification(String packageName, int id) {
+        StatusBarNotification[] sbns;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M)
+            sbns = getSystemService(NotificationManager.class).getActiveNotifications();
+        else
+            return null;
         for (StatusBarNotification sbn : sbns) {
-            if (sbn.getId() == id) {
+            if (sbn.getTag().equals(packageName) && sbn.getId() == id) {
                 return sbn.getNotification();
             }
         }
         return null;
     }
 
-    public void forQQ(String packageName, String title, String body, PendingIntent intent, int id, NotificationManagerCompat notificationManagerCompat) {
+    public void forQQ(String packageName, String title, String body, PendingIntent intent, NotificationManagerCompat notificationManagerCompat) {
         CheckChannel(packageName);
-        Person sender = new Person.Builder()
-                .setName(body.split(":")[0])
-                .build();
+
         Notification notification;
         if (!(body.contains("联系人给你") || body.contains("你收到了"))) {
+            int TitleID = StringToA(title.split("\\s\\(")[0]);
+            String[] bodySplit = body.split(":");
+            Person sender;
+            String message;
+            if (bodySplit.length == 1) {
+                sender = new Person.Builder()
+                        .setName(title.split("\\s\\(")[0])
+                        .build();
+                message = body;
+            } else {
+                sender = new Person.Builder()
+                        .setName(body.split(":")[0])
+                        .build();
+                message = bodySplit[1];
+            }
             NotificationCompat.MessagingStyle style;
-            Notification current = getCurrentNotification(id);
-            if (!(current == null)) {
+            Notification current;
+            if (!((current = getCurrentNotification(packageName, TitleID)) == null)) {
                 style = NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(current);
-                style.addMessage(body.split(":")[1], new Date().getTime(), sender);
+                style.addMessage(message, new Date().getTime(), sender);
             } else {
                 style = new NotificationCompat.MessagingStyle(sender)
                         .setConversationTitle(title)
-                        .addMessage(body.split(":")[1], new Date().getTime(), sender);
+                        .addMessage(message, new Date().getTime(), sender);
             }
             notification = new NotificationCompat.Builder(this, packageName)
                     .setSmallIcon(R.drawable.ic_notification)
-                    .setColor(getColor(R.color.colorPrimary))
+                    .setColor(color)
                     .setContentTitle(packageName)
                     .setStyle(style)
                     .setGroup(packageName)
@@ -138,18 +166,18 @@ public class FCMReceiver extends FirebaseMessagingService {
                     .setAutoCancel(true)
                     .setOnlyAlertOnce(true)
                     .build();
+            notificationManagerCompat.notify(packageName, TitleID, notification);
         } else {
             notification = new NotificationCompat.Builder(this, packageName)
                     .setSmallIcon(R.drawable.ic_notification)
-                    .setColor(getColor(R.color.colorPrimary))
+                    .setColor(color)
                     .setContentTitle(title)
                     .setContentText(body)
                     .setGroup(packageName)
                     .setContentIntent(intent)
                     .setAutoCancel(true)
                     .build();
-            notificationManagerCompat.notify(StringToA(body), notification);
+            notificationManagerCompat.notify(packageName, 0, notification);
         }
-        notificationManagerCompat.notify(id, notification);
     }
 }
