@@ -32,7 +32,8 @@ public class GetNotification extends NotificationListenerService {
 
     @Override
     public void onNotificationPosted(StatusBarNotification sbn) {
-        if (sbn.getPackageName().equals("com.RichardLuo.notificationpush") || inputID == null)
+        String packageName = sbn.getPackageName();
+        if (packageName.equals("com.RichardLuo.notificationpush") || inputID == null)
             return;
         Notification oneNotification = sbn.getNotification();
         String title = oneNotification.extras.getString(Notification.EXTRA_TITLE, "无标题");
@@ -53,7 +54,7 @@ public class GetNotification extends NotificationListenerService {
             JSONObject content = new JSONObject();
             content.put("title", title);
             content.put("body", text);
-            content.put("package", sbn.getPackageName());
+            content.put("package", packageName);
             content.put("id", sbn.getId());
             obj.put("to", inputID);
             obj.put("data", content);
