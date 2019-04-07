@@ -128,9 +128,8 @@ public class FCMReceiver extends FirebaseMessagingService {
 
     public void forQQ(String packageName, String title, String body, PendingIntent intent, NotificationManagerCompat notificationManagerCompat) {
         CheckChannel(packageName);
-
         Notification notification;
-        if (!(body.contains("联系人给你") || body.contains("你收到了"))) {
+        if (!(body.contains("联系人给你") || body.contains("你收到了")) || title.contains("QQ空间")) {
             int TitleID = StringToA(title.split("\\s\\(")[0]);
             String[] bodySplit = body.split(":");
             Person sender;
@@ -176,6 +175,7 @@ public class FCMReceiver extends FirebaseMessagingService {
                     .setGroup(packageName)
                     .setContentIntent(intent)
                     .setAutoCancel(true)
+                    .setOnlyAlertOnce(true)
                     .build();
             notificationManagerCompat.notify(packageName, 0, notification);
         }
