@@ -4,7 +4,7 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.pm.PackageManager;
+import android.content.pm.PackageInfo;
 import android.os.Build;
 import android.service.notification.StatusBarNotification;
 import android.support.v4.app.NotificationCompat;
@@ -15,11 +15,17 @@ import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static android.app.NotificationManager.IMPORTANCE_DEFAULT;
 import static android.app.PendingIntent.FLAG_UPDATE_CURRENT;
 
 public class FCMReceiver extends FirebaseMessagingService {
+    static Map<String, PendingIntent> Package_Intent = new HashMap<>();
+    static String installedQQ = null;
+    final static String[] QQNames = new String[]{"com.tencent.minihd.qq", "com.tencent.mobileqqi", "com.tencent.qqlite", "com.tencent.tim", "com.tencent.mobileqq"};
     int color = 0;
     NotificationManagerCompat notificationManagerCompat;
 
@@ -38,6 +44,7 @@ public class FCMReceiver extends FirebaseMessagingService {
         String body = remoteMessage.getData().get("body");
         int id = Integer.valueOf(remoteMessage.getData().get("id"));
         String packageName = remoteMessage.getData().get("package");
+
         //此处对单个应用进行单独定义
         switch (packageName) {
             case "com.tencent.minihd.qq":
@@ -45,11 +52,29 @@ public class FCMReceiver extends FirebaseMessagingService {
             case "com.tencent.qqlite":
             case "com.tencent.tim":
             case "com.tencent.mobileqq":
-                packageName = "com.tencent.mobileqq";
+                if (installedQQ == null) {
+                    if (!(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && getSystemService(NotificationManager.class).getNotificationChannels().contains(packageName))) {
+                        List<PackageInfo> info = this.getPackageManager().getInstalledPackages(0);
+                        for (String QQName : QQNames) {
+                            for (int i = 0; i < info.size(); i++) {
+                                String ipackage = info.get(i).packageName;
+                                if (QQName.equals(ipackage)) {
+                                    installedQQ = QQName;
+                                    break;
+                                }
+                            }
+                            if (installedQQ != null)
+                                break;
+                        }
+                    } else
+                        installedQQ = packageName;
+                }
+                packageName = installedQQ;
                 forQQ(packageName, title, body, getIntent(packageName), notificationManagerCompat);
                 return;
         }
-        CheckChannel(packageName);
+
+        setChannel(packageName);
         PendingIntent intent = getIntent(packageName);
         Notification summary = new NotificationCompat.Builder(this, packageName)
                 .setSmallIcon(R.drawable.ic_notification)
@@ -74,16 +99,22 @@ public class FCMReceiver extends FirebaseMessagingService {
         notificationManagerCompat.notify(packageName, id, notification);
     }
 
-    public boolean isAppInstalled(String packageName) {
-        try {
-            getPackageManager().getPackageInfo(packageName, 0);
-            return true;
-        } catch (PackageManager.NameNotFoundException e) {
+    private boolean isAppInstalled(String packageName) {
+        if (packageName == null || packageName.isEmpty()) {
             return false;
         }
+        List<PackageInfo> info = getPackageManager().getInstalledPackages(0);
+        if (info == null || info.isEmpty())
+            return false;
+        for (int i = 0; i < info.size(); i++) {
+            if (packageName.equals(info.get(i).packageName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    public static int StringToA(String content) {
+    private static int StringToA(String content) {
         int result = 0;
         int max = content.length();
         for (int i = 0; i < max; i++) {
@@ -94,25 +125,28 @@ public class FCMReceiver extends FirebaseMessagingService {
         return result;
     }
 
-    public void CheckChannel(String packageName) {
+    private void setChannel(String packageName) {
         NotificationChannel mChannel;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager notificationManager = getSystemService(NotificationManager.class);
             mChannel = new NotificationChannel(packageName, packageName, IMPORTANCE_DEFAULT);
-            if (!notificationManager.getNotificationChannels().contains(mChannel)) {
-                notificationManager.createNotificationChannel(mChannel);
-            }
+            notificationManager.createNotificationChannel(mChannel);
         }
     }
 
-    public PendingIntent getIntent(String packageName) {
+    private PendingIntent getIntent(String packageName) {
         PendingIntent intent = null;
+        if (Package_Intent.containsKey(packageName)) {
+            intent = Package_Intent.get(packageName);
+            return intent;
+        }
         if (packageName != null && !packageName.equals("com.android.systemui") && packageName.split("\\.")[0].equals("com") && isAppInstalled(packageName))
             intent = PendingIntent.getActivity(this, 200, getPackageManager().getLaunchIntentForPackage(packageName), FLAG_UPDATE_CURRENT);
+        Package_Intent.put(packageName, intent);
         return intent;
     }
 
-    public Notification getCurrentNotification(String packageName, int id) {
+    private Notification getCurrentNotification(String packageName, int id) {
         StatusBarNotification[] sbns;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M)
             sbns = getSystemService(NotificationManager.class).getActiveNotifications();
@@ -126,10 +160,11 @@ public class FCMReceiver extends FirebaseMessagingService {
         return null;
     }
 
-    public void forQQ(String packageName, String title, String body, PendingIntent intent, NotificationManagerCompat notificationManagerCompat) {
-        CheckChannel(packageName);
+    private void forQQ(String packageName, String title, String body, PendingIntent
+            intent, NotificationManagerCompat notificationManagerCompat) {
+        setChannel(packageName);
         Notification notification;
-        if (!(body.contains("联系人给你") || body.contains("你收到了")) || title.contains("QQ空间")) {
+        if (!(body.contains("联系人给你") || title.contains("QQ空间") || body.contains("你收到了"))) {
             int TitleID = StringToA(title.split("\\s\\(")[0]);
             String[] bodySplit = body.split(":");
             Person sender;
