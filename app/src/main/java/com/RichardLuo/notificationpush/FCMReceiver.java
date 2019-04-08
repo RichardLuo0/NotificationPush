@@ -25,7 +25,7 @@ import static android.app.PendingIntent.FLAG_UPDATE_CURRENT;
 public class FCMReceiver extends FirebaseMessagingService {
     static Map<String, PendingIntent> Package_Intent = new HashMap<>();
     static String installedQQ = null;
-    final static String[] QQNames = new String[]{"com.tencent.minihd.qq", "com.tencent.mobileqqi", "com.tencent.qqlite", "com.tencent.tim", "com.tencent.mobileqq"};
+    final static String[] QQNames = new String[]{"com.tencent.mobileqq", "com.tencent.tim", "com.tencent.mobileqqi", "com.tencent.qqlite", "com.tencent.minihd.qq"};
     int color = 0;
     NotificationManagerCompat notificationManagerCompat;
 
@@ -55,9 +55,9 @@ public class FCMReceiver extends FirebaseMessagingService {
                 if (installedQQ == null) {
                     if (!(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && getSystemService(NotificationManager.class).getNotificationChannels().contains(packageName))) {
                         List<PackageInfo> info = this.getPackageManager().getInstalledPackages(0);
-                        for (String QQName : QQNames) {
-                            for (int i = 0; i < info.size(); i++) {
-                                String ipackage = info.get(i).packageName;
+                        for (int i = 0; i < info.size(); i++) {
+                            String ipackage = info.get(i).packageName;
+                            for (String QQName : QQNames) {
                                 if (QQName.equals(ipackage)) {
                                     installedQQ = QQName;
                                     break;
@@ -127,10 +127,9 @@ public class FCMReceiver extends FirebaseMessagingService {
 
     private void setChannel(String packageName) {
         NotificationChannel mChannel;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !getSystemService(NotificationManager.class).getNotificationChannels().contains(packageName)) {
             mChannel = new NotificationChannel(packageName, packageName, IMPORTANCE_DEFAULT);
-            notificationManager.createNotificationChannel(mChannel);
+            getSystemService(NotificationManager.class).createNotificationChannel(mChannel);
         }
     }
 
