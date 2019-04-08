@@ -175,7 +175,7 @@ public class FCMReceiver extends FirebaseMessagingService {
                 message = body;
             } else {
                 sender = new Person.Builder()
-                        .setName(body.split(":")[0])
+                        .setName(bodySplit[0])
                         .build();
                 message = bodySplit[1];
             }
