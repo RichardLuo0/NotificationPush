@@ -15,7 +15,8 @@
         android:paddingTop="10dp"
         android:paddingBottom="10dp"
         android:text="@string/start"
-        android:textSize="18sp" />
+        android:textSize="18sp"
+        tools:checked="true" />
 
     <EditText
         android:id="@+id/editText"
@@ -33,6 +34,7 @@
         android:id="@+id/textView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:textColor="@android:color/black"
         android:textIsSelectable="true" />
 
     <Button
@@ -41,4 +43,18 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/clear" />
+
+    <Button
+        android:id="@+id/colors"
+        style="@style/Base.Widget.AppCompat.Button.Borderless.Colored"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/colors" />
+
+    <Button
+        android:id="@+id/about"
+        style="@style/Base.Widget.AppCompat.Button.Borderless.Colored"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/about" />
 </LinearLayout>

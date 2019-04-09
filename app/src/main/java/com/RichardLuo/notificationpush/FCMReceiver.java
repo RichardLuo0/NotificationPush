@@ -31,15 +31,13 @@ public class FCMReceiver extends FirebaseMessagingService {
 
     @Override
     public void onCreate() {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M)
-            color = getColor(R.color.colorPrimary);
-        else
-            color = getResources().getColor(R.color.colorPrimary);
         notificationManagerCompat = NotificationManagerCompat.from(this);
+        super.onCreate();
     }
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
+        color = getResources().getColor(getSharedPreferences("MainActivity", MODE_PRIVATE).getInt("color", R.color.teal));
         String title = remoteMessage.getData().get("title");
         String body = remoteMessage.getData().get("body");
         int id = Integer.valueOf(remoteMessage.getData().get("id"));
@@ -85,6 +83,7 @@ public class FCMReceiver extends FirebaseMessagingService {
                 .setGroupSummary(true)
                 .setContentIntent(intent)
                 .setAutoCancel(true)
+                .setOnlyAlertOnce(true)
                 .build();
         notificationManagerCompat.notify(packageName, 0, summary);
         Notification notification = new NotificationCompat.Builder(this, packageName)
@@ -95,6 +94,7 @@ public class FCMReceiver extends FirebaseMessagingService {
                 .setGroup(packageName)
                 .setContentIntent(intent)
                 .setAutoCancel(true)
+                .setOnlyAlertOnce(true)
                 .build();
         notificationManagerCompat.notify(packageName, id, notification);
     }
