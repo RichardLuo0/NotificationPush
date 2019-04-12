@@ -6,6 +6,7 @@ import android.content.ComponentName;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -27,6 +28,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
 
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity implements CompoundButton.OnCheckedChangeListener {
     static String inputID;
     static SharedPreferences preferences;
@@ -37,6 +40,8 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
     Button clear;
     Button colors;
     Button about;
+
+    final static String[] QQNames = new String[]{"com.tencent.mobileqq", "com.tencent.tim", "com.tencent.mobileqqi", "com.tencent.qqlite", "com.tencent.minihd.qq"};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -141,6 +146,19 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
                 });
         startService(new Intent(this, FCMReceiver.class));
         input.setText(preferences.getString("ID", ""));
+
+        if (preferences.getString("installedQQ", null) == null) {
+            List<PackageInfo> info = this.getPackageManager().getInstalledPackages(0);
+            for (int i = 0; i < info.size(); i++) {
+                String ipackage = info.get(i).packageName;
+                for (String QQName : QQNames) {
+                    if (QQName.equals(ipackage)) {
+                        preferences.edit().putString("installedQQ", QQName).apply();
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     @Override

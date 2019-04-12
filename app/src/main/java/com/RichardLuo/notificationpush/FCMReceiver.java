@@ -24,8 +24,7 @@ import static android.app.PendingIntent.FLAG_UPDATE_CURRENT;
 
 public class FCMReceiver extends FirebaseMessagingService {
     static Map<String, PendingIntent> Package_Intent = new HashMap<>();
-    static String installedQQ = null;
-    final static String[] QQNames = new String[]{"com.tencent.mobileqq", "com.tencent.tim", "com.tencent.mobileqqi", "com.tencent.qqlite", "com.tencent.minihd.qq"};
+
     int color = 0;
     NotificationManagerCompat notificationManagerCompat;
 
@@ -50,24 +49,7 @@ public class FCMReceiver extends FirebaseMessagingService {
             case "com.tencent.qqlite":
             case "com.tencent.tim":
             case "com.tencent.mobileqq":
-                if (installedQQ == null) {
-                    if (!(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && getSystemService(NotificationManager.class).getNotificationChannels().contains(packageName))) {
-                        List<PackageInfo> info = this.getPackageManager().getInstalledPackages(0);
-                        for (int i = 0; i < info.size(); i++) {
-                            String ipackage = info.get(i).packageName;
-                            for (String QQName : QQNames) {
-                                if (QQName.equals(ipackage)) {
-                                    installedQQ = QQName;
-                                    break;
-                                }
-                            }
-                            if (installedQQ != null)
-                                break;
-                        }
-                    } else
-                        installedQQ = packageName;
-                }
-                packageName = installedQQ;
+                packageName = getSharedPreferences("MainActivity", MODE_PRIVATE).getString("installedQQ", null);
                 forQQ(packageName, title, body, getIntent(packageName), notificationManagerCompat);
                 return;
         }
@@ -125,9 +107,22 @@ public class FCMReceiver extends FirebaseMessagingService {
         return result;
     }
 
-    private void setChannel(String packageName) {
+    private boolean isChannelExist(String packageName) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            List<NotificationChannel> channels = getSystemService(NotificationManager.class).getNotificationChannels();
+            for (NotificationChannel channel : channels) {
+                if (channel.getId().equals(packageName)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        return false;
+    }
+
+    public void setChannel(String packageName) {
         NotificationChannel mChannel;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !getSystemService(NotificationManager.class).getNotificationChannels().contains(packageName)) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !isChannelExist(packageName)) {
             mChannel = new NotificationChannel(packageName, packageName, IMPORTANCE_DEFAULT);
             getSystemService(NotificationManager.class).createNotificationChannel(mChannel);
         }
@@ -159,8 +154,7 @@ public class FCMReceiver extends FirebaseMessagingService {
         return null;
     }
 
-    private void forQQ(String packageName, String title, String body, PendingIntent
-            intent, NotificationManagerCompat notificationManagerCompat) {
+    private void forQQ(String packageName, String title, String body, PendingIntent intent, NotificationManagerCompat notificationManagerCompat) {
         setChannel(packageName);
         Notification notification;
         if (!(body.contains("联系人给你") || title.contains("QQ空间") || body.contains("你收到了"))) {
