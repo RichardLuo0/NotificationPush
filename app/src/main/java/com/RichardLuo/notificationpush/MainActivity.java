@@ -6,7 +6,7 @@ import android.content.ComponentName;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageInfo;
+import android.content.pm.ApplicationInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -147,15 +147,12 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
         startService(new Intent(this, FCMReceiver.class));
         input.setText(preferences.getString("ID", ""));
 
-        if (preferences.getString("installedQQ", null) == null) {
-            List<PackageInfo> info = this.getPackageManager().getInstalledPackages(0);
-            for (int i = 0; i < info.size(); i++) {
-                String ipackage = info.get(i).packageName;
-                for (String QQName : QQNames) {
-                    if (QQName.equals(ipackage)) {
-                        preferences.edit().putString("installedQQ", QQName).apply();
-                        break;
-                    }
+        List<ApplicationInfo> packageInfo = this.getPackageManager().getInstalledApplications(0);
+        for (ApplicationInfo info : packageInfo) {
+            for (String QQName : QQNames) {
+                if (QQName.equals(info.packageName) && info.enabled) {
+                    preferences.edit().putString("installedQQ", QQName).apply();
+                    break;
                 }
             }
         }

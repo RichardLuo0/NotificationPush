@@ -4,7 +4,7 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.pm.PackageInfo;
+import android.content.pm.ApplicationInfo;
 import android.os.Build;
 import android.service.notification.StatusBarNotification;
 import android.support.v4.app.NotificationCompat;
@@ -85,11 +85,11 @@ public class FCMReceiver extends FirebaseMessagingService {
         if (packageName == null || packageName.isEmpty()) {
             return false;
         }
-        List<PackageInfo> info = getPackageManager().getInstalledPackages(0);
-        if (info == null || info.isEmpty())
+        List<ApplicationInfo> applicationInfo = getPackageManager().getInstalledApplications(0);
+        if (applicationInfo == null || applicationInfo.isEmpty())
             return false;
-        for (int i = 0; i < info.size(); i++) {
-            if (packageName.equals(info.get(i).packageName)) {
+        for (ApplicationInfo info : applicationInfo) {
+            if (packageName.equals(info.packageName) && info.enabled) {
                 return true;
             }
         }
