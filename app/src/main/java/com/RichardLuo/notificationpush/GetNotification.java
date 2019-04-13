@@ -94,11 +94,9 @@ public class GetNotification extends NotificationListenerService {
             out.close();
             connection.getResponseCode();
             connection.disconnect();
-        } catch (
-                IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
-        } catch (
-                JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
     }

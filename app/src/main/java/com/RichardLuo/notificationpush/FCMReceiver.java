@@ -173,6 +173,7 @@ public class FCMReceiver extends FirebaseMessagingService {
         } else {
             style = new NotificationCompat.MessagingStyle(sender)
                     .setConversationTitle(title)
+                    .setGroupConversation(true)
                     .addMessage(message, new Date().getTime(), sender);
         }
 

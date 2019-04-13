@@ -148,19 +148,23 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
         input.setText(preferences.getString("ID", ""));
 
         List<ApplicationInfo> packageInfo = this.getPackageManager().getInstalledApplications(0);
+        boolean isNotfInstalled = false;
+        String installedQQ = "";
         for (ApplicationInfo info : packageInfo) {
             if (info.packageName.equals("com.jinhaihan.qqnotfandshare")) {
-                preferences.edit().putString("isNotfInstalled", "true").apply();
+                isNotfInstalled = true;
             }
-            for (String QQName : QQNames) {
-                if (QQName.equals(info.packageName) && info.enabled) {
-                    preferences.edit().putString("installedQQ", QQName).apply();
-                    break;
+            if (installedQQ.equals("")) {
+                for (String QQName : QQNames) {
+                    if (QQName.equals(info.packageName) && info.enabled) {
+                        installedQQ = QQName;
+                        break;
+                    }
                 }
             }
         }
-        if (!preferences.getString("isNotfInstalled", "").equals("true"))
-            preferences.edit().putString("isNotfInstalled", "false").apply();
+        preferences.edit().putString("isNotfInstalled", isNotfInstalled ? "true" : "false").apply();
+        preferences.edit().putString("installedQQ",installedQQ).apply();
     }
 
     @Override
