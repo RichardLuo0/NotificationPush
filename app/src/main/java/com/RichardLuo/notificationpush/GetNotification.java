@@ -33,12 +33,39 @@ public class GetNotification extends NotificationListenerService {
     @Override
     public void onNotificationPosted(StatusBarNotification sbn) {
         String packageName = sbn.getPackageName();
-        if (packageName.equals("com.RichardLuo.notificationpush") || inputID == null)
-            return;
         Notification oneNotification = sbn.getNotification();
         String title = oneNotification.extras.getString(Notification.EXTRA_TITLE, "无标题");
-        String text = oneNotification.extras.getString(Notification.EXTRA_TEXT, "无内容");
+        String body = oneNotification.extras.getString(Notification.EXTRA_TEXT, "无内容");
+        int ID = sbn.getId();
+        String senderName = null;
+
         if (title.contains("正在运行") || title.contains("running")) return;
+        if (inputID == null) return;
+
+        //此处对单个应用进行单独定义
+        switch (packageName) {
+            case "com.RichardLuo.notificationpush":
+                return;
+            case "com.tencent.minihd.qq":
+                if (getSharedPreferences("MainActivity", MODE_PRIVATE).getString("isNotfInstalled", "").equals("true"))
+                    return;
+            case "com.tencent.mobileqqi":
+            case "com.tencent.qqlite":
+            case "com.tencent.tim":
+            case "com.tencent.mobileqq":
+            case "com.jinhaihan.qqnotfandshare":
+                if (!(body.contains("联系人给你") || title.contains("QQ空间") || body.contains("你收到了"))) {
+                    ID = StringToA(title.split("\\s\\(")[0]);
+                    String[] bodySplit = body.split(":");
+                    if (bodySplit.length == 1 || body.split("\\s")[0].equals(""))
+                        senderName = title.split("\\s\\(")[0];
+                    else {
+                        senderName = bodySplit[0];
+                        body = bodySplit[1];
+                    }
+                }
+        }
+
         HttpURLConnection connection;
         try {
             URL url = new URL("https://fcm.googleapis.com/fcm/send");
@@ -54,9 +81,11 @@ public class GetNotification extends NotificationListenerService {
             JSONObject obj = new JSONObject();
             JSONObject content = new JSONObject();
             content.put("title", title);
-            content.put("body", text);
+            content.put("body", body);
             content.put("package", packageName);
-            content.put("id", sbn.getId());
+            content.put("id", ID);
+            if (senderName != null)
+                content.put("senderName", senderName);
             obj.put("to", inputID);
             obj.put("data", content);
             String json = obj.toString();
@@ -65,10 +94,23 @@ public class GetNotification extends NotificationListenerService {
             out.close();
             connection.getResponseCode();
             connection.disconnect();
-        } catch (IOException e) {
+        } catch (
+                IOException e) {
             e.printStackTrace();
-        } catch (JSONException e) {
+        } catch (
+                JSONException e) {
             e.printStackTrace();
         }
+    }
+
+    private static int StringToA(String content) {
+        int result = 0;
+        int max = content.length();
+        for (int i = 0; i < max; i++) {
+            char c = content.charAt(i);
+            int b = (int) c;
+            result = result + b;
+        }
+        return result;
     }
 }

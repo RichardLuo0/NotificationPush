@@ -4,6 +4,7 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.ActivityNotFoundException;
 import android.content.pm.ApplicationInfo;
 import android.os.Build;
 import android.service.notification.StatusBarNotification;
@@ -37,37 +38,33 @@ public class FCMReceiver extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
         color = getResources().getColor(getSharedPreferences("MainActivity", MODE_PRIVATE).getInt("color", R.color.teal));
-        String title = remoteMessage.getData().get("title");
-        String body = remoteMessage.getData().get("body");
-        int id = Integer.valueOf(remoteMessage.getData().get("id"));
+        Map<String, String> data = remoteMessage.getData();
+        String title = data.get("title");
+        String body = data.get("body");
+        int id = Integer.valueOf(data.get("id"));
+        String senderName = "";
+        if (data.containsKey("senderName"))
+            senderName = data.get("senderName");
         String packageName = remoteMessage.getData().get("package");
 
-        //此处对单个应用进行单独定义
+        setChannel(packageName);
+        PendingIntent intent = getIntent(packageName);
+        setSummary(packageName, intent);
+
         switch (packageName) {
             case "com.tencent.minihd.qq":
             case "com.tencent.mobileqqi":
             case "com.tencent.qqlite":
             case "com.tencent.tim":
             case "com.tencent.mobileqq":
-                packageName = getSharedPreferences("MainActivity", MODE_PRIVATE).getString("installedQQ", null);
-                forQQ(packageName, title, body, getIntent(packageName), notificationManagerCompat);
+            case "com.jinhaihan.qqnotfandshare":
+                String QQpackageName = getSharedPreferences("MainActivity", MODE_PRIVATE).getString("installedQQ", null);
+                if (senderName.equals(""))
+                    break;
+                MessagingStyle(packageName, title, senderName, body, getIntent(QQpackageName), notificationManagerCompat, id);
                 return;
         }
 
-        setChannel(packageName);
-        PendingIntent intent = getIntent(packageName);
-        Notification summary = new NotificationCompat.Builder(this, packageName)
-                .setSmallIcon(R.drawable.ic_notification)
-                .setColor(color)
-                .setStyle(new NotificationCompat.BigTextStyle()
-                        .setSummaryText(packageName))
-                .setGroup(packageName)
-                .setGroupSummary(true)
-                .setContentIntent(intent)
-                .setAutoCancel(true)
-                .setOnlyAlertOnce(true)
-                .build();
-        notificationManagerCompat.notify(packageName, 0, summary);
         Notification notification = new NotificationCompat.Builder(this, packageName)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setColor(color)
@@ -94,17 +91,6 @@ public class FCMReceiver extends FirebaseMessagingService {
             }
         }
         return false;
-    }
-
-    private static int StringToA(String content) {
-        int result = 0;
-        int max = content.length();
-        for (int i = 0; i < max; i++) {
-            char c = content.charAt(i);
-            int b = (int) c;
-            result = result + b;
-        }
-        return result;
     }
 
     private boolean isChannelExist(String packageName) {
@@ -135,7 +121,12 @@ public class FCMReceiver extends FirebaseMessagingService {
             return intent;
         }
         if (packageName != null && !packageName.equals("com.android.systemui") && packageName.split("\\.")[0].equals("com") && isAppInstalled(packageName))
-            intent = PendingIntent.getActivity(this, 200, getPackageManager().getLaunchIntentForPackage(packageName), FLAG_UPDATE_CURRENT);
+            try {
+                intent = PendingIntent.getActivity(this, 200, getPackageManager().getLaunchIntentForPackage(packageName), FLAG_UPDATE_CURRENT);
+            } catch (ActivityNotFoundException e) {
+                Package_Intent.put(packageName, null);
+                return null;
+            }
         Package_Intent.put(packageName, intent);
         return intent;
     }
@@ -154,7 +145,51 @@ public class FCMReceiver extends FirebaseMessagingService {
         return null;
     }
 
-    private void forQQ(String packageName, String title, String body, PendingIntent intent, NotificationManagerCompat notificationManagerCompat) {
+    public void setSummary(String packageName, PendingIntent intent) {
+        Notification summary = new NotificationCompat.Builder(this, packageName)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setColor(color)
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .setSummaryText(packageName))
+                .setGroup(packageName)
+                .setGroupSummary(true)
+                .setContentIntent(intent)
+                .setAutoCancel(true)
+                .setOnlyAlertOnce(true)
+                .build();
+        notificationManagerCompat.notify(packageName, 0, summary);
+    }
+
+    private void MessagingStyle(String packageName, String title, String senderName, String message, PendingIntent intent, NotificationManagerCompat notificationManagerCompat, int ID) {
+        Person sender = new Person.Builder()
+                .setName(senderName)
+                .build();
+
+        Notification current;
+        NotificationCompat.MessagingStyle style;
+        if (!((current = getCurrentNotification(packageName, ID)) == null)) {
+            style = NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(current);
+            style.addMessage(message, new Date().getTime(), sender);
+        } else {
+            style = new NotificationCompat.MessagingStyle(sender)
+                    .setConversationTitle(title)
+                    .addMessage(message, new Date().getTime(), sender);
+        }
+
+        Notification notification = new NotificationCompat.Builder(this, packageName)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setColor(color)
+                .setContentTitle(packageName)
+                .setStyle(style)
+                .setGroup(packageName)
+                .setContentIntent(intent)
+                .setAutoCancel(true)
+                .setOnlyAlertOnce(true)
+                .build();
+        notificationManagerCompat.notify(packageName, ID, notification);
+    }
+
+    /*private void forQQ(String packageName, String title, String body, PendingIntent intent, NotificationManagerCompat notificationManagerCompat) {
         setChannel(packageName);
         Notification notification;
         if (!(body.contains("联系人给你") || title.contains("QQ空间") || body.contains("你收到了"))) {
@@ -207,5 +242,5 @@ public class FCMReceiver extends FirebaseMessagingService {
                     .build();
             notificationManagerCompat.notify(packageName, 0, notification);
         }
-    }
+    }*/
 }
