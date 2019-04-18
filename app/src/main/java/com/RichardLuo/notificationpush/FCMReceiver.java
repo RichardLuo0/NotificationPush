@@ -4,7 +4,6 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.ActivityNotFoundException;
 import android.content.pm.ApplicationInfo;
 import android.os.Build;
 import android.service.notification.StatusBarNotification;
@@ -42,14 +41,14 @@ public class FCMReceiver extends FirebaseMessagingService {
         String title = data.get("title");
         String body = data.get("body");
         int id = Integer.valueOf(data.get("id"));
-        String senderName = "";
+        String senderName = null;
         if (data.containsKey("senderName"))
             senderName = data.get("senderName");
         String packageName = remoteMessage.getData().get("package");
+        PendingIntent intent = null;
 
         setChannel(packageName);
-        PendingIntent intent = getIntent(packageName);
-        setSummary(packageName, intent);
+        setSummary(packageName);
 
         switch (packageName) {
             case "com.tencent.minihd.qq":
@@ -59,11 +58,17 @@ public class FCMReceiver extends FirebaseMessagingService {
             case "com.tencent.mobileqq":
             case "com.jinhaihan.qqnotfandshare":
                 String QQpackageName = getSharedPreferences("MainActivity", MODE_PRIVATE).getString("installedQQ", null);
-                if (senderName.equals(""))
+                intent = getIntent(QQpackageName);
+                if (senderName == null)
                     break;
-                MessagingStyle(packageName, title, senderName, body, getIntent(QQpackageName), notificationManagerCompat, id);
+                if (senderName.equals(""))
+                    senderName = "无名氏";
+                MessagingStyle(packageName, title, senderName, body, intent, notificationManagerCompat, id);
                 return;
+            default:
+                intent = getIntent(packageName);
         }
+
 
         Notification notification = new NotificationCompat.Builder(this, packageName)
                 .setSmallIcon(R.drawable.ic_notification)
@@ -145,7 +150,7 @@ public class FCMReceiver extends FirebaseMessagingService {
         return null;
     }
 
-    public void setSummary(String packageName, PendingIntent intent) {
+    public void setSummary(String packageName) {
         Notification summary = new NotificationCompat.Builder(this, packageName)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setColor(color)
@@ -153,7 +158,6 @@ public class FCMReceiver extends FirebaseMessagingService {
                         .setSummaryText(packageName))
                 .setGroup(packageName)
                 .setGroupSummary(true)
-                .setContentIntent(intent)
                 .setAutoCancel(true)
                 .setOnlyAlertOnce(true)
                 .build();
