@@ -148,23 +148,19 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
         input.setText(preferences.getString("ID", ""));
 
         List<ApplicationInfo> packageInfo = this.getPackageManager().getInstalledApplications(0);
-        boolean isNotfInstalled = false;
-        String installedQQ = "";
+        String installedQQ = preferences.getString("installedQQ", "");
+        String current = null;
         for (ApplicationInfo info : packageInfo) {
-            if (info.packageName.equals("com.jinhaihan.qqnotfandshare")) {
-                isNotfInstalled = true;
-            }
-            if (installedQQ.equals("")) {
-                for (String QQName : QQNames) {
-                    if (QQName.equals(info.packageName) && info.enabled) {
-                        installedQQ = QQName;
-                        break;
-                    }
+            if (info.packageName.equals(installedQQ)) break;
+            for (String QQName : QQNames) {
+                if (QQName.equals(info.packageName) && info.enabled) {
+                    current = info.packageName;
+                    preferences.edit().putString("installedQQ", current).apply();
+                    break;
                 }
             }
+            if (current != null) break;
         }
-        preferences.edit().putString("isNotfInstalled", isNotfInstalled ? "true" : "false").apply();
-        preferences.edit().putString("installedQQ",installedQQ).apply();
     }
 
     @Override
@@ -176,7 +172,7 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
         } else {
             isEnabled = false;
         }
-        preferences.edit().putString("ID", inputID).apply();
+        preferences.edit().putString("ID", input.getText().toString()).apply();
     }
 
     @Override
@@ -196,6 +192,7 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
                 }
             } else {
                 Toast.makeText(this, "请填写设备ID", Toast.LENGTH_SHORT).show();
+                preferences.edit().putString("ID", input.getText().toString()).apply();
                 Swh.setChecked(false);
             }
         } else {

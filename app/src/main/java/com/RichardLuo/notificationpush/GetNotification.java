@@ -47,22 +47,24 @@ public class GetNotification extends NotificationListenerService {
             case "com.RichardLuo.notificationpush":
                 return;
             case "com.tencent.minihd.qq":
-                if (getSharedPreferences("MainActivity", MODE_PRIVATE).getString("isNotfInstalled", "").equals("true"))
-                    return;
             case "com.tencent.mobileqqi":
             case "com.tencent.qqlite":
             case "com.tencent.tim":
             case "com.tencent.mobileqq":
-            case "com.jinhaihan.qqnotfandshare":
-                if (!(body.contains("联系人给你") || title.contains("QQ空间") || body.contains("你收到了"))) {
-                    ID = StringToA(title.split("\\s\\(")[0]);
-                    String[] bodySplit = body.split(":");
-                    if (bodySplit.length == 1 || body.split("\\s")[0].equals(""))
-                        senderName = title.split("\\s\\(")[0];
-                    else {
-                        senderName = bodySplit[0];
-                        body = bodySplit[1];
+                if (!(title.contains("QQ空间") || title.contains("条新消息)"))) {
+                    if (oneNotification.tickerText != null) {
+                        String[] tickerText = oneNotification.tickerText.toString().replaceAll("\n", " ").split(":", 2);
+                        if (tickerText[0].charAt(tickerText[0].length() - 1) == ')') {
+                            String[] name_group = tickerText[0].split("\\(", 2);
+                            senderName = name_group[0];
+                            title = name_group[1].replaceFirst("\\)", "");
+                        } else {
+                            senderName = tickerText[0];
+                            title = tickerText[0];
+                        }
+                        body = tickerText[1];
                     }
+                    ID = StringToA(title);
                 }
         }
 

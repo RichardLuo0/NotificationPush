@@ -45,10 +45,9 @@ public class FCMReceiver extends FirebaseMessagingService {
         if (data.containsKey("senderName"))
             senderName = data.get("senderName");
         String packageName = remoteMessage.getData().get("package");
-        PendingIntent intent = null;
+        PendingIntent intent;
 
         setChannel(packageName);
-        setSummary(packageName);
 
         switch (packageName) {
             case "com.tencent.minihd.qq":
@@ -62,13 +61,14 @@ public class FCMReceiver extends FirebaseMessagingService {
                 if (senderName == null)
                     break;
                 if (senderName.equals(""))
-                    senderName = "无名氏";
+                    senderName = "  ";
+                setSummary(packageName, intent);
                 MessagingStyle(packageName, title, senderName, body, intent, notificationManagerCompat, id);
                 return;
             default:
                 intent = getIntent(packageName);
+                setSummary(packageName, intent);
         }
-
 
         Notification notification = new NotificationCompat.Builder(this, packageName)
                 .setSmallIcon(R.drawable.ic_notification)
@@ -150,13 +150,14 @@ public class FCMReceiver extends FirebaseMessagingService {
         return null;
     }
 
-    public void setSummary(String packageName) {
+    public void setSummary(String packageName, PendingIntent intent) {
         Notification summary = new NotificationCompat.Builder(this, packageName)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setColor(color)
                 .setStyle(new NotificationCompat.BigTextStyle()
                         .setSummaryText(packageName))
                 .setGroup(packageName)
+                .setContentIntent(intent)
                 .setGroupSummary(true)
                 .setAutoCancel(true)
                 .setOnlyAlertOnce(true)
