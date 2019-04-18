@@ -51,7 +51,7 @@ public class GetNotification extends NotificationListenerService {
             case "com.tencent.qqlite":
             case "com.tencent.tim":
             case "com.tencent.mobileqq":
-                if (!(title.contains("QQ空间") || title.contains("条新消息)"))) {
+                if (!(title.contains("QQ空间"))) {
                     if (oneNotification.tickerText != null) {
                         String[] tickerText = oneNotification.tickerText.toString().replaceAll("\n", " ").split(":", 2);
                         if (tickerText[0].charAt(tickerText[0].length() - 1) == ')') {
@@ -63,6 +63,14 @@ public class GetNotification extends NotificationListenerService {
                             title = tickerText[0];
                         }
                         body = tickerText[1];
+                    } else {
+                        String[] bodySplit = body.split(":");
+                        if (bodySplit.length == 1 || body.split("\\s")[0].equals(""))
+                            senderName = title.split("\\s\\(")[0];
+                        else {
+                            senderName = bodySplit[0];
+                            body = bodySplit[1];
+                        }
                     }
                     ID = StringToA(title);
                 }
