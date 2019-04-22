@@ -1,17 +1,17 @@
 <resources>
     <string name="app_name">NotificationPush</string>
     <string name="service_name">GetNotification</string>
-    <string name="start">start</string>
-    <string name="priority">priority</string>
+    <string name="start">开始转发</string>
+    <string name="priority">通知优先级</string>
     <array name="priorityContent">
-        <item>Normal</item>
-        <item>High</item>
+        <item>普通优先级</item>
+        <item>高优先级</item>
     </array>
-    <string name="DeviceID">DeviceID</string>
-    <string name="wait">waiting for token</string>
-    <string name="clear">remove all channels</string>
-    <string name="colors">change color</string>
-    <string name="about">about</string>
+    <string name="DeviceID">设备ID</string>
+    <string name="wait">等待token中</string>
+    <string name="clear">删除所有通知渠道</string>
+    <string name="colors">更换颜色</string>
+    <string name="about">关于</string>
 
     <string name="HowToUse">
         此应用可以通过fcm通道从一台手机向另一台手机转发通知\n如果显示fail，请检查Google框架并尝试翻墙重启应用\n你只需要将token(就是那堆乱码)复制到服务端的输入框，点击start即可开始推送\n注意优先级设定只在服务端生效

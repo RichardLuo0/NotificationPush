@@ -16,9 +16,11 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -31,10 +33,11 @@ import com.google.firebase.iid.InstanceIdResult;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements CompoundButton.OnCheckedChangeListener {
-    static String inputID;
     static SharedPreferences preferences;
+    static Intent service;
     boolean isEnabled;
     Switch Swh;
+    Spinner spinner;
     EditText input;
     TextView DeviceID;
     Button clear;
@@ -50,10 +53,24 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
         setTheme(preferences.getInt("style", R.style.base_AppTheme_teal));
         setContentView(R.layout.activity_main);
         Swh = findViewById(R.id.switch1);
+        spinner = findViewById(R.id.spinner);
+        spinner.setSelection(preferences.getInt("priority", 0));
+        spinner.setOnItemSelectedListener(new Spinner.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                preferences.edit().putInt("priority", position).apply();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+
         input = findViewById(R.id.editText);
         DeviceID = findViewById(R.id.textView);
         clear = findViewById(R.id.clear);
-        clear.setOnClickListener(new View.OnClickListener() {
+        clear.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -64,6 +81,7 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
                 }
             }
         });
+
         colors = findViewById(R.id.colors);
         colors.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -110,8 +128,9 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
                 listDialog.show();
             }
         });
+
         about = findViewById(R.id.about);
-        about.setOnClickListener(new View.OnClickListener() {
+        about.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
                 final AlertDialog.Builder normalDialog = new AlertDialog.Builder(MainActivity.this);
@@ -177,15 +196,13 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
 
     @Override
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-        Intent service = new Intent(this, GetNotification.class);
         Intent intent = new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS");
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         if (isChecked) {
             if (!input.getText().toString().trim().isEmpty()) {
                 if (isEnabled) {
-                    inputID = input.getText().toString();
-                    preferences.edit().putString("ID", inputID).apply();
-                    startService(service);
+                    preferences.edit().putString("ID", input.getText().toString()).apply();
+                    startService(service = new Intent(this, GetNotification.class));
                 } else {
                     startActivity(intent);
                     Swh.setChecked(false);
@@ -196,11 +213,8 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
                 Swh.setChecked(false);
             }
         } else {
-            if (!isEnabled) {
-                startActivity(intent);
-                stopService(service);
-            }
             startActivity(intent);
+            stopService(service);
         }
     }
 

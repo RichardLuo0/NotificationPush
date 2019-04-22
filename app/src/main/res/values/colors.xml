@@ -9,4 +9,5 @@
     <color name="grey">#607D8B</color>
 
     <color name="colorPrimaryDark">#EAEAEA</color>
+    <color name="black">#000000</color>
 </resources>

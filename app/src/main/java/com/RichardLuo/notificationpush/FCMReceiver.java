@@ -125,7 +125,7 @@ public class FCMReceiver extends FirebaseMessagingService {
             intent = Package_Intent.get(packageName);
             return intent;
         }
-        if (packageName != null && !packageName.contains("android") && packageName.split("\\.")[0].equals("com") && isAppInstalled(packageName))
+        if (packageName != null && !packageName.contains("android") && packageName.split("\\.", 2)[0].equals("com") && isAppInstalled(packageName))
             try {
                 intent = PendingIntent.getActivity(this, 200, getPackageManager().getLaunchIntentForPackage(packageName), FLAG_UPDATE_CURRENT);
             } catch (Exception e) {

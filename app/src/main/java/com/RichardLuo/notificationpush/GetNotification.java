@@ -26,7 +26,7 @@ public class GetNotification extends NotificationListenerService {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        inputID = MainActivity.inputID.trim();
+        inputID = getSharedPreferences("MainActivity", MODE_PRIVATE).getString("ID", "");
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -38,6 +38,7 @@ public class GetNotification extends NotificationListenerService {
         String body = oneNotification.extras.getString(Notification.EXTRA_TEXT, "无内容");
         int ID = sbn.getId();
         String senderName = null;
+        String priority = "normal";
 
         if (title.contains("正在运行") || title.contains("running")) return;
         if (inputID == null) return;
@@ -57,16 +58,19 @@ public class GetNotification extends NotificationListenerService {
                         if (tickerText[0].charAt(tickerText[0].length() - 1) == ')') {
                             String[] name_group = tickerText[0].split("\\(", 2);
                             senderName = name_group[0];
-                            title = name_group[1].replaceFirst("\\)", "");
+                            title = name_group[1].substring(0, name_group[1].length() - 1);
                         } else {
                             senderName = tickerText[0];
                             title = tickerText[0];
                         }
                         body = tickerText[1];
                     } else {
-                        String[] bodySplit = body.split(":");
-                        if (bodySplit.length == 1 || body.split("\\s")[0].equals(""))
-                            senderName = title.split("\\s\\(")[0];
+                        if ((body.contains("联系人给你") || body.contains("你收到了")) && title.equals("QQ"))
+                            return;
+                        title = title.split("\\s\\(", 2)[0];
+                        String[] bodySplit = body.split(":", 2);
+                        if (bodySplit.length == 1 || body.split("\\s", 2)[0].equals(""))
+                            senderName = title.split("\\s\\(", 2)[0];
                         else {
                             senderName = bodySplit[0];
                             body = bodySplit[1];
@@ -74,6 +78,15 @@ public class GetNotification extends NotificationListenerService {
                     }
                     ID = StringToA(title);
                 }
+        }
+
+        switch (getSharedPreferences("MainActivity", MODE_PRIVATE).getInt("priority", 0)) {
+            case 0:
+                priority = "normal";
+                break;
+            case 1:
+                priority = "high";
+                break;
         }
 
         HttpURLConnection connection;
@@ -97,6 +110,7 @@ public class GetNotification extends NotificationListenerService {
             if (senderName != null)
                 content.put("senderName", senderName);
             obj.put("to", inputID);
+            obj.put("priority", priority);
             obj.put("data", content);
             String json = obj.toString();
             out.write(json.getBytes());
