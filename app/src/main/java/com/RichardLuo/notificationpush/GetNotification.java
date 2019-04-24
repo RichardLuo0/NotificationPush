@@ -6,13 +6,13 @@ import android.os.StrictMode;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.DataOutputStream;
-import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class GetNotification extends NotificationListenerService {
     protected final String Authorization = "";
@@ -43,6 +43,17 @@ public class GetNotification extends NotificationListenerService {
         if (title.contains("正在运行") || title.contains("running")) return;
         if (inputID == null) return;
 
+        switch (getSharedPreferences("Application", MODE_PRIVATE).getInt(packageName, 0)) {
+            case 0:
+                priority = "normal";
+                break;
+            case 1:
+                priority = "high";
+                break;
+            case 2:
+                return;
+        }
+
         //此处对单个应用进行单独定义
         switch (packageName) {
             case "com.RichardLuo.notificationpush":
@@ -54,16 +65,18 @@ public class GetNotification extends NotificationListenerService {
             case "com.tencent.mobileqq":
                 if (!(title.contains("QQ空间"))) {
                     if (oneNotification.tickerText != null) {
-                        String[] tickerText = oneNotification.tickerText.toString().replaceAll("\n", " ").split(":", 2);
-                        if (tickerText[0].charAt(tickerText[0].length() - 1) == ')') {
-                            String[] name_group = tickerText[0].split("\\(", 2);
-                            senderName = name_group[0];
-                            title = name_group[1].substring(0, name_group[1].length() - 1);
+                        String tickerText = oneNotification.tickerText.toString().replace("\n", "");
+                        Matcher matcher = Pattern.compile("^(.*?)\\((((?![()]).)*?)\\):(.*?)$").matcher(tickerText);
+                        if (matcher.find()) {
+                            senderName = matcher.group(1);
+                            title = matcher.group(2);
+                            body = matcher.group(4);
                         } else {
-                            senderName = tickerText[0];
-                            title = tickerText[0];
+                            String[] single = tickerText.split(":", 2);
+                            senderName = single[0];
+                            title = single[0];
+                            body = single[1];
                         }
-                        body = tickerText[1];
                     } else {
                         if ((body.contains("联系人给你") || body.contains("你收到了")) && title.equals("QQ"))
                             return;
@@ -80,21 +93,13 @@ public class GetNotification extends NotificationListenerService {
                 }
         }
 
-        switch (getSharedPreferences("MainActivity", MODE_PRIVATE).getInt("priority", 0)) {
-            case 0:
-                priority = "normal";
-                break;
-            case 1:
-                priority = "high";
-                break;
-        }
-
         HttpURLConnection connection;
         try {
             URL url = new URL("https://fcm.googleapis.com/fcm/send");
             connection = (HttpURLConnection) url.openConnection();
             connection.setDoOutput(true);
             connection.setConnectTimeout(1000);
+            connection.setReadTimeout(1000);
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "application/json");
             connection.setRequestProperty("Authorization", "key=" + Authorization);
@@ -118,9 +123,7 @@ public class GetNotification extends NotificationListenerService {
             out.close();
             connection.getResponseCode();
             connection.disconnect();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (JSONException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

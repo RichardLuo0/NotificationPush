@@ -18,30 +18,15 @@
         android:textSize="18sp"
         tools:checked="true" />
 
-    <LinearLayout
+    <Switch
+        android:id="@+id/switch2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:paddingTop="10dp"
-        android:paddingBottom="10dp">
-
-        <TextView
-            android:id="@+id/textView2"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/priority"
-            android:textColor="@color/black"
-            android:textSize="18sp" />
-
-        <Spinner
-            android:id="@+id/spinner"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end"
-            android:entries="@array/priorityContent" />
-
-    </LinearLayout>
+        android:paddingBottom="10dp"
+        android:text="@string/start"
+        android:textSize="18sp"
+        tools:checked="true" />
 
     <EditText
         android:id="@+id/editText"
@@ -59,9 +44,16 @@
         android:id="@+id/textView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:text="@string/wait"
         android:textColor="@android:color/black"
-        android:textIsSelectable="true"
-        android:text="@string/wait"/>
+        android:textIsSelectable="true" />
+
+    <Button
+        android:id="@+id/priority"
+        style="@style/Base.Widget.AppCompat.Button.Borderless.Colored"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/priority" />
 
     <Button
         android:id="@+id/clear"

@@ -16,7 +16,6 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
@@ -32,14 +31,15 @@ import com.google.firebase.iid.InstanceIdResult;
 
 import java.util.List;
 
+//TODO 增加应用前台判断
 public class MainActivity extends AppCompatActivity implements CompoundButton.OnCheckedChangeListener {
     static SharedPreferences preferences;
     static Intent service;
     boolean isEnabled;
-    Switch Swh;
-    Spinner spinner;
+    Switch swh;
     EditText input;
     TextView DeviceID;
+    Button priority;
     Button clear;
     Button colors;
     Button about;
@@ -52,18 +52,13 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
         preferences = getPreferences(MODE_PRIVATE);
         setTheme(preferences.getInt("style", R.style.base_AppTheme_teal));
         setContentView(R.layout.activity_main);
-        Swh = findViewById(R.id.switch1);
-        spinner = findViewById(R.id.spinner);
-        spinner.setSelection(preferences.getInt("priority", 0));
-        spinner.setOnItemSelectedListener(new Spinner.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                preferences.edit().putInt("priority", position).apply();
-            }
+        swh = findViewById(R.id.switch1);
 
+        priority = findViewById(R.id.priority);
+        priority.setOnClickListener(new Button.OnClickListener() {
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-
+            public void onClick(View v) {
+                startActivity(new Intent(getApplicationContext(), Application.class));
             }
         });
 
@@ -151,7 +146,7 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
                 normalDialog.show();
             }
         });
-        Swh.setOnCheckedChangeListener(this);
+        swh.setOnCheckedChangeListener(this);
         FirebaseInstanceId.getInstance().getInstanceId()
                 .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
                     @Override
@@ -187,9 +182,10 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
         super.onStart();
         if (isNotificationListenersEnabled()) {
             isEnabled = true;
-            Swh.setChecked(true);
+            swh.setChecked(true);
         } else {
             isEnabled = false;
+            swh.setChecked(false);
         }
         preferences.edit().putString("ID", input.getText().toString()).apply();
     }
@@ -202,18 +198,23 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
             if (!input.getText().toString().trim().isEmpty()) {
                 if (isEnabled) {
                     preferences.edit().putString("ID", input.getText().toString()).apply();
+                    input.setEnabled(false);
                     startService(service = new Intent(this, GetNotification.class));
                 } else {
                     startActivity(intent);
-                    Swh.setChecked(false);
+                    input.setEnabled(true);
+                    swh.setChecked(false);
                 }
             } else {
                 Toast.makeText(this, "请填写设备ID", Toast.LENGTH_SHORT).show();
                 preferences.edit().putString("ID", input.getText().toString()).apply();
-                Swh.setChecked(false);
+                input.setEnabled(true);
+                swh.setChecked(false);
             }
         } else {
-            startActivity(intent);
+            if (isEnabled)
+                startActivity(intent);
+            input.setEnabled(true);
             stopService(service);
         }
     }
