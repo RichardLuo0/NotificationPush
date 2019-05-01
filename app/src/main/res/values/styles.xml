@@ -3,6 +3,8 @@
     <style name="base" parent="Base.Theme.AppCompat.Light">
         <item name="android:colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="android:windowLightStatusBar" tools:targetApi="23">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:navigationBarColor">@color/colorPrimaryDark</item>
     </style>
 
     <!-- Base application theme. -->

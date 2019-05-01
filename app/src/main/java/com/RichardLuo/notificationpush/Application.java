@@ -62,7 +62,7 @@ public class Application extends AppCompatActivity {
 
                         }
                     };
-                    packageView.add(new info(name, packageManager.getApplicationIcon(applicationInfo), onItemSelectedListener,preferences.getInt(applicationInfo.packageName, 0)));
+                    packageView.add(new info(name, packageManager.getApplicationIcon(applicationInfo), onItemSelectedListener, preferences.getInt(applicationInfo.packageName, 0)));
                 }
 
                 handler.post(new Runnable() {
@@ -132,5 +132,9 @@ public class Application extends AppCompatActivity {
         }.start();
     }
 
-
+    @Override
+    public boolean onSupportNavigateUp() {
+        finish();
+        return true;
+    }
 }

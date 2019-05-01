@@ -11,18 +11,18 @@
         android:id="@+id/imageView"
         android:layout_width="25dp"
         android:layout_height="25dp"
-        tools:srcCompat="@tools:sample/avatars"
         android:layout_marginStart="10dp"
-        android:layout_marginEnd="10dp"/>
+        android:layout_marginEnd="10dp"
+        tools:srcCompat="@tools:sample/avatars" />
 
     <TextView
         android:id="@+id/appName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
+        android:text="@string/priority"
         android:textColor="@color/black"
-        android:textSize="18sp"
-        android:text="@string/priority"/>
+        android:textSize="18sp" />
 
     <Spinner
         android:id="@+id/spinner"

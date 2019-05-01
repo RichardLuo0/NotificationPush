@@ -46,6 +46,8 @@ public class FCMReceiver extends FirebaseMessagingService {
             senderName = data.get("senderName");
         String packageName = remoteMessage.getData().get("package");
         PendingIntent intent;
+        if (getSharedPreferences("MainActivity", MODE_PRIVATE).getBoolean("hide", false) && ForegroundMonitor.packageName.equals(packageName))
+            return;
 
         setChannel(packageName);
 
@@ -56,6 +58,9 @@ public class FCMReceiver extends FirebaseMessagingService {
             case "com.tencent.tim":
             case "com.tencent.mobileqq":
             case "com.jinhaihan.qqnotfandshare":
+                String className = ForegroundMonitor.packageName;
+                if (getSharedPreferences("MainActivity", MODE_PRIVATE).getBoolean("hide", false) && (className.contains("com.tencent.") && (className.contains("qq") || className.contains("tim"))))
+                    return;
                 String QQpackageName = getSharedPreferences("MainActivity", MODE_PRIVATE).getString("installedQQ", null);
                 intent = getIntent(QQpackageName);
                 if (senderName == null)

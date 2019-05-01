@@ -24,7 +24,7 @@
         android:layout_height="wrap_content"
         android:paddingTop="10dp"
         android:paddingBottom="10dp"
-        android:text="@string/start"
+        android:text="@string/hide"
         android:textSize="18sp"
         tools:checked="true" />
 
@@ -49,18 +49,18 @@
         android:textIsSelectable="true" />
 
     <Button
-        android:id="@+id/priority"
-        style="@style/Base.Widget.AppCompat.Button.Borderless.Colored"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/priority" />
-
-    <Button
         android:id="@+id/clear"
         style="@style/Base.Widget.AppCompat.Button.Borderless.Colored"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/clear" />
+
+    <Button
+        android:id="@+id/priority"
+        style="@style/Base.Widget.AppCompat.Button.Borderless.Colored"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/priority" />
 
     <Button
         android:id="@+id/colors"

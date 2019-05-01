@@ -3,6 +3,7 @@ package com.RichardLuo.notificationpush;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -19,7 +20,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -31,12 +31,12 @@ import com.google.firebase.iid.InstanceIdResult;
 
 import java.util.List;
 
-//TODO 增加应用前台判断
-public class MainActivity extends AppCompatActivity implements CompoundButton.OnCheckedChangeListener {
+public class MainActivity extends AppCompatActivity implements Switch.OnCheckedChangeListener {
     static SharedPreferences preferences;
-    static Intent service;
-    boolean isEnabled;
+    boolean isNotiListenerEnabled;
+    boolean isAccessEnabled;
     Switch swh;
+    Switch hide;
     EditText input;
     TextView DeviceID;
     Button priority;
@@ -53,12 +53,27 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
         setTheme(preferences.getInt("style", R.style.base_AppTheme_teal));
         setContentView(R.layout.activity_main);
         swh = findViewById(R.id.switch1);
+        swh.setOnCheckedChangeListener(this);
 
-        priority = findViewById(R.id.priority);
-        priority.setOnClickListener(new Button.OnClickListener() {
+        hide = findViewById(R.id.switch2);
+        hide.setOnCheckedChangeListener(new Switch.OnCheckedChangeListener() {
             @Override
-            public void onClick(View v) {
-                startActivity(new Intent(getApplicationContext(), Application.class));
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                if (isChecked) {
+                    if (isAccessEnabled) {
+                        preferences.edit().putBoolean("hide", true).apply();
+                    } else {
+                        startActivity(intent);
+                        preferences.edit().putBoolean("hide", false).apply();
+                        hide.setChecked(false);
+                    }
+                } else {
+                    if (isAccessEnabled)
+                        startActivity(intent);
+                    preferences.edit().putBoolean("hide", false).apply();
+                }
             }
         });
 
@@ -74,6 +89,14 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
                         notificationManager.deleteNotificationChannel(channel.getId());
                     }
                 }
+            }
+        });
+
+        priority = findViewById(R.id.priority);
+        priority.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(getApplicationContext(), Application.class));
             }
         });
 
@@ -146,7 +169,7 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
                 normalDialog.show();
             }
         });
-        swh.setOnCheckedChangeListener(this);
+
         FirebaseInstanceId.getInstance().getInstanceId()
                 .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
                     @Override
@@ -158,7 +181,6 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
                         DeviceID.setText(task.getResult().getToken());
                     }
                 });
-        startService(new Intent(this, FCMReceiver.class));
         input.setText(preferences.getString("ID", ""));
 
         List<ApplicationInfo> packageInfo = this.getPackageManager().getInstalledApplications(0);
@@ -181,11 +203,18 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
     protected void onStart() {
         super.onStart();
         if (isNotificationListenersEnabled()) {
-            isEnabled = true;
+            isNotiListenerEnabled = true;
             swh.setChecked(true);
         } else {
-            isEnabled = false;
+            isNotiListenerEnabled = false;
             swh.setChecked(false);
+        }
+        if (isAccessibilitySettingsOn(this)) {
+            isAccessEnabled = true;
+            hide.setChecked(true);
+        } else {
+            isAccessEnabled = false;
+            hide.setChecked(false);
         }
         preferences.edit().putString("ID", input.getText().toString()).apply();
     }
@@ -196,10 +225,9 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         if (isChecked) {
             if (!input.getText().toString().trim().isEmpty()) {
-                if (isEnabled) {
+                if (isNotiListenerEnabled) {
                     preferences.edit().putString("ID", input.getText().toString()).apply();
                     input.setEnabled(false);
-                    startService(service = new Intent(this, GetNotification.class));
                 } else {
                     startActivity(intent);
                     input.setEnabled(true);
@@ -212,10 +240,9 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
                 swh.setChecked(false);
             }
         } else {
-            if (isEnabled)
+            if (isNotiListenerEnabled)
                 startActivity(intent);
             input.setEnabled(true);
-            stopService(service);
         }
     }
 
@@ -228,6 +255,36 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
                 final ComponentName cn = ComponentName.unflattenFromString(name);
                 if (cn != null) {
                     if (TextUtils.equals(pkgName, cn.getPackageName())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+
+    private boolean isAccessibilitySettingsOn(Context mContext) {
+        int accessibilityEnabled;
+        final String service = getPackageName() + "/" + ForegroundMonitor.class.getCanonicalName();
+        try {
+            accessibilityEnabled = Settings.Secure.getInt(
+                    mContext.getApplicationContext().getContentResolver(),
+                    android.provider.Settings.Secure.ACCESSIBILITY_ENABLED);
+        } catch (Settings.SettingNotFoundException e) {
+            return false;
+        }
+        TextUtils.SimpleStringSplitter mStringColonSplitter = new TextUtils.SimpleStringSplitter(':');
+
+        if (accessibilityEnabled == 1) {
+            String settingValue = Settings.Secure.getString(
+                    mContext.getApplicationContext().getContentResolver(),
+                    Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+            if (settingValue != null) {
+                mStringColonSplitter.setString(settingValue);
+                while (mStringColonSplitter.hasNext()) {
+                    String accessibilityService = mStringColonSplitter.next();
+                    if (accessibilityService.equalsIgnoreCase(service)) {
                         return true;
                     }
                 }
