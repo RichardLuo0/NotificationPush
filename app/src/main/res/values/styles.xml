@@ -1,59 +1,58 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="base" parent="Base.Theme.AppCompat.Light">
+    <style name="base" parent="Theme.AppCompat.Light">
         <item name="android:colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="android:windowLightStatusBar" tools:targetApi="23">true</item>
-        <item name="android:windowLightNavigationBar">true</item>
-        <item name="android:navigationBarColor">@color/colorPrimaryDark</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
+        <item name="android:navigationBarColor" tools:targetApi="27">@color/colorPrimaryDark</item>
+        <item name="actionBarTheme">@style/actionBarTheme</item>
+        <item name="alertDialogTheme">@style/AlertDialog</item>
+        <item name="android:colorControlNormal">?android:attr/colorAccent</item>
+        <item name="android:colorControlActivated">?android:attr/colorAccent</item>
+    </style>
+
+    <style name="actionBarTheme">
+        <item name="android:textColorPrimary">?android:attr/colorAccent</item>
+        <item name="android:textColor">@color/black</item>
+    </style>
+
+    <style name="AlertDialog" parent="@style/Theme.AppCompat.Light.Dialog.Alert">
+        <item name="android:colorAccent">?android:attr/color</item>
     </style>
 
     <!-- Base application theme. -->
     <style name="base.AppTheme_teal">
-        <item name="android:textColor">@color/teal</item>
-        <item name="android:textColorPrimary">@color/teal</item>
-        <item name="android:colorControlActivated">@color/teal</item>
+        <item name="android:color">@color/teal</item>
         <item name="android:colorAccent">@color/teal</item>
     </style>
 
     <style name="base.AppTheme_red">
-        <item name="android:textColor">@color/red</item>
-        <item name="android:textColorPrimary">@color/red</item>
-        <item name="android:colorControlActivated">@color/red</item>
+        <item name="android:color">@color/red</item>
         <item name="android:colorAccent">@color/red</item>
     </style>
 
     <style name="base.AppTheme_pink">
-        <item name="android:textColor">@color/pink</item>
-        <item name="android:textColorPrimary">@color/pink</item>
-        <item name="android:colorControlActivated">@color/pink</item>
+        <item name="android:color">@color/pink</item>
         <item name="android:colorAccent">@color/pink</item>
     </style>
 
     <style name="base.AppTheme_purple">
-        <item name="android:textColor">@color/purple</item>
-        <item name="android:textColorPrimary">@color/purple</item>
-        <item name="android:colorControlActivated">@color/purple</item>
+        <item name="android:color">@color/purple</item>
         <item name="android:colorAccent">@color/purple</item>
     </style>
 
     <style name="base.AppTheme_blue">
-        <item name="android:textColor">@color/blue</item>
-        <item name="android:textColorPrimary">@color/blue</item>
-        <item name="android:colorControlActivated">@color/blue</item>
+        <item name="android:color">@color/blue</item>
         <item name="android:colorAccent">@color/blue</item>
     </style>
 
     <style name="base.AppTheme_yellow">
-        <item name="android:textColor">@color/yellow</item>
-        <item name="android:textColorPrimary">@color/yellow</item>
-        <item name="android:colorControlActivated">@color/yellow</item>
+        <item name="android:color">@color/yellow</item>
         <item name="android:colorAccent">@color/yellow</item>
     </style>
 
     <style name="base.AppTheme_grey">
-        <item name="android:textColor">@color/grey</item>
-        <item name="android:textColorPrimary">@color/grey</item>
-        <item name="android:colorControlActivated">@color/grey</item>
+        <item name="android:color">@color/grey</item>
         <item name="android:colorAccent">@color/grey</item>
     </style>
 </resources>

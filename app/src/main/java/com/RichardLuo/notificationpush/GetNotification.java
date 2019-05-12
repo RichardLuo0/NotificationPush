@@ -1,7 +1,8 @@
 package com.RichardLuo.notificationpush;
 
 import android.app.Notification;
-import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.StrictMode;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
@@ -14,20 +15,20 @@ import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static android.preference.PreferenceManager.getDefaultSharedPreferences;
+
 public class GetNotification extends NotificationListenerService {
     protected final String Authorization = "";
     protected final String Sender = "";
     public String inputID;
+    static int QQcount = 0;
+    PackageManager pm;
 
     @Override
     public void onCreate() {
+        inputID = getDefaultSharedPreferences(this).getString("input", "");
+        pm = getPackageManager();
         StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().permitAll().build());
-    }
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        inputID = getSharedPreferences("MainActivity", MODE_PRIVATE).getString("ID", "");
-        return super.onStartCommand(intent, flags, startId);
     }
 
     @Override
@@ -36,12 +37,23 @@ public class GetNotification extends NotificationListenerService {
         Notification oneNotification = sbn.getNotification();
         String title = oneNotification.extras.getString(Notification.EXTRA_TITLE, "无标题");
         String body = oneNotification.extras.getString(Notification.EXTRA_TEXT, "无内容");
+        String AppName;
+        SharedPreferences sharedPreferences = getSharedPreferences("AppName", MODE_PRIVATE);
+        if ((AppName = sharedPreferences.getString(packageName, null)) == null) {
+            try {
+                AppName = pm.getApplicationLabel(pm.getApplicationInfo(packageName, PackageManager.GET_META_DATA)).toString();
+            } catch (PackageManager.NameNotFoundException e) {
+                AppName = " ";
+            }
+            sharedPreferences.edit().putString(packageName, AppName).apply();
+        }
         int ID = sbn.getId();
         String senderName = null;
         String priority = "normal";
 
-        if (title.contains("正在运行") || title.contains("running")) return;
-        if (inputID == null) return;
+        if (title.contains("正在运行") || title.contains("running") || inputID == null) return;
+        if (getDefaultSharedPreferences(this).getBoolean("hide_no_content", false) && title.equals("无标题") && body.equals("无内容"))
+            return;
 
         switch (getSharedPreferences("Application", MODE_PRIVATE).getInt(packageName, 0)) {
             case 0:
@@ -65,6 +77,10 @@ public class GetNotification extends NotificationListenerService {
             case "com.tencent.mobileqq":
                 if (!(title.contains("QQ空间"))) {
                     if (oneNotification.tickerText != null) {
+                        int currentQQcount = Integer.parseInt(Pattern.compile("过来(.*?)条").matcher(body).group(1));
+                        if (QQcount > currentQQcount)
+                            return;
+                        QQcount = currentQQcount;
                         String tickerText = oneNotification.tickerText.toString().replace("\n", "");
                         Matcher matcher = Pattern.compile("^(.*?)\\((((?![()]).)*?)\\):(.*?)$").matcher(tickerText);
                         if (matcher.find()) {
@@ -78,6 +94,9 @@ public class GetNotification extends NotificationListenerService {
                             body = single[1];
                         }
                     } else {
+                        int currentQQcount = 1;
+                        if (QQcount > currentQQcount)
+                            return;
                         if ((body.contains("联系人给你") || body.contains("你收到了")) && title.equals("QQ"))
                             return;
                         title = title.split("\\s\\(", 2)[0];
@@ -111,6 +130,7 @@ public class GetNotification extends NotificationListenerService {
             content.put("title", title);
             content.put("body", body);
             content.put("package", packageName);
+            content.put("name", AppName);
             content.put("id", ID);
             if (senderName != null)
                 content.put("senderName", senderName);

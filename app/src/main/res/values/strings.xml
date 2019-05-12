@@ -3,21 +3,32 @@
     <string name="service_name">GetNotification</string>
     <string name="access_name">ForegroundMonitor</string>
     <string name="descript_access">Hide notification when app is foreground</string>
-    <string name="start">start</string>
-    <string name="hide">hide when foreground</string>
+    <string name="server">Server</string>
+    <string name="start">Start</string>
+    <string name="hide_no_content">Hide No Content</string>
+    <string name="summary_hide_no_content">Hide notification which has no content</string>
     <string name="DeviceID">DeviceID</string>
-    <string name="wait">waiting for token</string>
+    <string name="summary_DeviceID">Where do you want to send</string>
+    <string name="priority">Change Priority</string>
+    <string name="summary_priority">Change send priority</string>
+
+    <string name="client">Client</string>
+    <string name="hide">Hide when Foreground</string>
+    <string name="token">Token</string>
+    <string name="summary_token">Local token</string>
+    <string name="clear">Remove All Channels</string>
+    <string name="summary_clear">Remove notification channels</string>
+
     <array name="priorityContent">
         <item>Normal</item>
         <item>High</item>
         <item>off</item>
     </array>
-    <string name="clear">remove all channels</string>
-    <string name="priority">change priority</string>
-    <string name="colors">change color</string>
-    <string name="about">about</string>
+
+    <string name="colors">Change Color</string>
+    <string name="about">About</string>
     <string name="HowToUse">
-        此应用可以通过fcm通道从一台手机向另一台手机转发通知\n如果显示fail，请检查Google框架并尝试翻墙重启应用\n你只需要将token(就是那堆乱码)复制到服务端的输入框，点击start即可开始推送\n注意优先级设定只在服务端生效\n服务端必须24小时翻墙
+        此应用可以通过fcm通道从一台手机向另一台手机转发通知\n如果显示fail，请检查Google框架并尝试翻墙重启应用\n你只需要将token(就是那堆乱码)复制到服务端的输入框，点击start即可开始推送\n注意设置优先级指发送的优先级，作用于服务端\n隐藏通知作用于主力机\n服务端必须24小时翻墙
     </string>
     <string name="title_activity_application">Application</string>
 </resources>

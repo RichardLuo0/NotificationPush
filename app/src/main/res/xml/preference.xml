@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="@string/server">
+        <SwitchPreference
+            android:key="start"
+            android:title="@string/start" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="hide_no_content"
+            android:summary="@string/summary_hide_no_content"
+            android:title="@string/hide_no_content" />
+        <EditTextPreference
+            android:inputType="text"
+            android:key="input"
+            android:singleLine="false"
+            android:summary="@string/summary_DeviceID"
+            android:title="@string/DeviceID" />
+        <Preference
+            android:summary="@string/summary_priority"
+            android:title="@string/priority">
+            <intent
+                android:action="android.intent.action.MAIN"
+                android:targetClass="com.RichardLuo.notificationpush.Application"
+                android:targetPackage="com.RichardLuo.notificationpush" />
+        </Preference>
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/client">
+        <SwitchPreference
+            android:key="hide"
+            android:summary="@string/descript_access"
+            android:title="@string/hide" />
+        <Preference
+            android:key="token"
+            android:summary="@string/summary_token"
+            android:title="@string/token" />
+        <Preference
+            android:key="clear"
+            android:summary="@string/summary_clear"
+            android:title="@string/clear" />
+    </PreferenceCategory>
+
+</PreferenceScreen>
