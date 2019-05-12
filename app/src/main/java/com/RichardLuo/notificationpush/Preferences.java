@@ -29,6 +29,7 @@ import com.google.firebase.iid.InstanceIdResult;
 
 import java.util.Objects;
 
+import static android.content.Context.MODE_PRIVATE;
 import static android.preference.PreferenceManager.getDefaultSharedPreferences;
 
 public class Preferences extends PreferenceFragmentCompat {
@@ -118,6 +119,7 @@ public class Preferences extends PreferenceFragmentCompat {
                         notificationManager.deleteNotificationChannel(channel.getId());
                     }
                 }
+                Objects.requireNonNull(getContext()).getSharedPreferences("Channels", MODE_PRIVATE).edit().clear().apply();
                 Toast.makeText(getActivity(), "已删除通知渠道", Toast.LENGTH_SHORT).show();
                 return true;
             }

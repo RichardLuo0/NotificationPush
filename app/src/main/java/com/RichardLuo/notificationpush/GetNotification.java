@@ -21,7 +21,7 @@ public class GetNotification extends NotificationListenerService {
     protected final String Authorization = "";
     protected final String Sender = "";
     public String inputID;
-    static int QQcount = 0;
+    static int QQcount = 0;//统计联系人数，避免重复通知
     PackageManager pm;
 
     @Override
@@ -77,9 +77,11 @@ public class GetNotification extends NotificationListenerService {
             case "com.tencent.mobileqq":
                 if (!(title.contains("QQ空间"))) {
                     if (oneNotification.tickerText != null) {
-                        int currentQQcount = Integer.parseInt(Pattern.compile("过来(.*?)条").matcher(body).group(1));
-                        if (QQcount > currentQQcount)
+                        int currentQQcount = Integer.parseInt(Pattern.compile("^有(.*?)个").matcher(body).group(1));
+                        if (QQcount > currentQQcount) {
+                            QQcount = currentQQcount;
                             return;
+                        }
                         QQcount = currentQQcount;
                         String tickerText = oneNotification.tickerText.toString().replace("\n", "");
                         Matcher matcher = Pattern.compile("^(.*?)\\((((?![()]).)*?)\\):(.*?)$").matcher(tickerText);
@@ -94,9 +96,11 @@ public class GetNotification extends NotificationListenerService {
                             body = single[1];
                         }
                     } else {
-                        int currentQQcount = 1;
-                        if (QQcount > currentQQcount)
+                        if (QQcount > 1) {
+                            QQcount = 1;
                             return;
+                        }
+                        QQcount = 1;
                         if ((body.contains("联系人给你") || body.contains("你收到了")) && title.equals("QQ"))
                             return;
                         title = title.split("\\s\\(", 2)[0];

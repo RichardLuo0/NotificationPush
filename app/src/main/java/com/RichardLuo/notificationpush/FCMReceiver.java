@@ -72,14 +72,14 @@ public class FCMReceiver extends FirebaseMessagingService {
                 if (senderName.equals(""))
                     senderName = "  ";
                 setSummary(packageName, AppName, intent);
-                MessagingStyle(packageName, title, senderName, body, intent, notificationManagerCompat, id);
+                MessagingStyle(packageName, AppName, title, senderName, body, intent, notificationManagerCompat, id);
                 return;
             default:
                 intent = getIntent(packageName);
                 setSummary(packageName, AppName, intent);
         }
 
-        Notification notification = new NotificationCompat.Builder(this, packageName)
+        Notification notification = new NotificationCompat.Builder(this, AppName)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setColor(color)
                 .setStyle(new NotificationCompat.BigTextStyle()
@@ -109,24 +109,12 @@ public class FCMReceiver extends FirebaseMessagingService {
         return false;
     }
 
-    private boolean isChannelExist(String packageName) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            List<NotificationChannel> channels = getSystemService(NotificationManager.class).getNotificationChannels();
-            for (NotificationChannel channel : channels) {
-                if (channel.getId().equals(packageName)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        return false;
-    }
-
     public void setChannel(String AppName) {
         NotificationChannel mChannel;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !isChannelExist(AppName)) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !getSharedPreferences("Channels", MODE_PRIVATE).contains(AppName)) {
             mChannel = new NotificationChannel(AppName, AppName, IMPORTANCE_DEFAULT);
             getSystemService(NotificationManager.class).createNotificationChannel(mChannel);
+            getSharedPreferences("Channels", MODE_PRIVATE).edit().putBoolean(AppName, true).apply();
         }
     }
 
@@ -163,7 +151,7 @@ public class FCMReceiver extends FirebaseMessagingService {
 
     public void setSummary(String packageName, String AppName, PendingIntent intent) {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-            Notification summary = new NotificationCompat.Builder(this, packageName)
+            Notification summary = new NotificationCompat.Builder(this, AppName)
                     .setSmallIcon(R.drawable.ic_notification)
                     .setColor(color)
                     .setStyle(new NotificationCompat.BigTextStyle()
@@ -178,7 +166,7 @@ public class FCMReceiver extends FirebaseMessagingService {
         }
     }
 
-    private void MessagingStyle(String packageName, String title, String senderName, String message, PendingIntent intent, NotificationManagerCompat notificationManagerCompat, int ID) {
+    private void MessagingStyle(String packageName, String AppName, String title, String senderName, String message, PendingIntent intent, NotificationManagerCompat notificationManagerCompat, int ID) {
         Person sender = new Person.Builder()
                 .setName(senderName)
                 .build();
@@ -195,7 +183,7 @@ public class FCMReceiver extends FirebaseMessagingService {
                     .addMessage(message, new Date().getTime(), sender);
         }
 
-        Notification notification = new NotificationCompat.Builder(this, packageName)
+        Notification notification = new NotificationCompat.Builder(this, AppName)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setColor(color)
                 .setContentTitle(packageName)
