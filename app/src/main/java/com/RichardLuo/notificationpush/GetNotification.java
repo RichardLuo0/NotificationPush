@@ -21,7 +21,7 @@ public class GetNotification extends NotificationListenerService {
     protected final String Authorization = "";
     protected final String Sender = "";
     public String inputID;
-    static int QQcount = 0;//统计联系人数，避免重复通知
+    static boolean QQcount = true;//前一次是否有多个联系人，避免重复通知
     PackageManager pm;
 
     @Override
@@ -36,7 +36,7 @@ public class GetNotification extends NotificationListenerService {
         String packageName = sbn.getPackageName();
         Notification oneNotification = sbn.getNotification();
         String title = oneNotification.extras.getString(Notification.EXTRA_TITLE, "无标题");
-        String body = oneNotification.extras.getString(Notification.EXTRA_TEXT, "无内容");
+        String body = oneNotification.extras.getCharSequence(Notification.EXTRA_TEXT, "无内容").toString();
         String AppName;
         SharedPreferences sharedPreferences = getSharedPreferences("AppName", MODE_PRIVATE);
         if ((AppName = sharedPreferences.getString(packageName, null)) == null) {
@@ -76,13 +76,8 @@ public class GetNotification extends NotificationListenerService {
             case "com.tencent.tim":
             case "com.tencent.mobileqq":
                 if (!(title.contains("QQ空间"))) {
-                    if (oneNotification.tickerText != null) {
-                        int currentQQcount = Integer.parseInt(Pattern.compile("^有(.*?)个").matcher(body).group(1));
-                        if (QQcount > currentQQcount) {
-                            QQcount = currentQQcount;
-                            return;
-                        }
-                        QQcount = currentQQcount;
+                    if (body.contains("联系人给你") || body.contains("你收到了")) {
+                        QQcount = true;
                         String tickerText = oneNotification.tickerText.toString().replace("\n", "");
                         Matcher matcher = Pattern.compile("^(.*?)\\((((?![()]).)*?)\\):(.*?)$").matcher(tickerText);
                         if (matcher.find()) {
@@ -96,15 +91,13 @@ public class GetNotification extends NotificationListenerService {
                             body = single[1];
                         }
                     } else {
-                        if (QQcount > 1) {
-                            QQcount = 1;
+                        if (QQcount) {
+                            QQcount = false;
                             return;
                         }
-                        QQcount = 1;
-                        if ((body.contains("联系人给你") || body.contains("你收到了")) && title.equals("QQ"))
-                            return;
+                        QQcount = false;
                         title = title.split("\\s\\(", 2)[0];
-                        String[] bodySplit = body.split(":", 2);
+                        String[] bodySplit = body.split(":\\s", 2);
                         if (bodySplit.length == 1 || body.split("\\s", 2)[0].equals(""))
                             senderName = title.split("\\s\\(", 2)[0];
                         else {

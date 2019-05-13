@@ -1,6 +1,8 @@
 # NotificationPush
 此应用可以通过fcm从一台手机向另一台手机转发通知
 
+目前仅在酷安发布[传送门](https://www.coolapk.com/apk/223104)
+
 This app is for forwarding your notification from one phone to another using the fcm tunnel
 
 ## What do you need
