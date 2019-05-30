@@ -19,185 +19,182 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static android.app.NotificationManager.IMPORTANCE_DEFAULT;
 import static android.app.PendingIntent.FLAG_UPDATE_CURRENT;
 import static android.preference.PreferenceManager.getDefaultSharedPreferences;
 
 public class FCMReceiver extends FirebaseMessagingService {
-		static Map<String, PendingIntent> Package_Intent = new HashMap<>();
-		static Map<String, NotificationCompat.MessagingStyle> previousMessageStyle = new HashMap<>();
+    static Map<String, PendingIntent> Package_Intent = new HashMap<>();
 
-		int color = 0;
-		NotificationManagerCompat notificationManagerCompat;
+    int color = 0;
+    NotificationManagerCompat notificationManagerCompat;
 
-		@Override
-		public void onCreate() {
-				notificationManagerCompat = NotificationManagerCompat.from(this);
-				super.onCreate();
-		}
+    @Override
+    public void onCreate() {
+        notificationManagerCompat = NotificationManagerCompat.from(this);
+        super.onCreate();
+    }
 
-		@Override
-		public void onMessageReceived(RemoteMessage remoteMessage) {
-				color = getResources().getColor(getSharedPreferences("MainActivity", MODE_PRIVATE).getInt("color", R.color.teal));
-				Map<String, String> data = remoteMessage.getData();
-				String title = data.get("title");
-				String body = data.get("body");
-				int id = Integer.valueOf(data.get("id"));
-				String senderName = null;
-				if (data.containsKey("senderName"))
-						senderName = data.get("senderName");
-				String packageName = remoteMessage.getData().get("package");
-				String AppName = remoteMessage.getData().get("name");
-				PendingIntent intent;
-				boolean hide = getDefaultSharedPreferences(this).getBoolean("hide", false);
-				if (hide && ForegroundMonitor.packageName.equals(packageName))
-						return;
+    @Override
+    public void onMessageReceived(RemoteMessage remoteMessage) {
+        color = getResources().getColor(getSharedPreferences("MainActivity", MODE_PRIVATE).getInt("color", R.color.teal));
+        Map<String, String> data = remoteMessage.getData();
+        String title = data.get("title");
+        String body = data.get("body");
+        int id = Integer.valueOf(data.get("id"));
+        String senderName = null;
+        if (data.containsKey("senderName"))
+            senderName = data.get("senderName");
+        String packageName = remoteMessage.getData().get("package");
+        String AppName = remoteMessage.getData().get("name");
+        PendingIntent intent;
+        boolean hide = getDefaultSharedPreferences(this).getBoolean("hide", false);
+        if (hide && ForegroundMonitor.packageName.equals(packageName))
+            return;
 
-				setChannel(AppName);
+        setChannel(AppName);
 
-				switch (packageName) {
-						case "com.tencent.minihd.qq":
-						case "com.tencent.mobileqqi":
-						case "com.tencent.qqlite":
-						case "com.tencent.tim":
-						case "com.tencent.mobileqq":
-						case "com.jinhaihan.qqnotfandshare":
-								String className = ForegroundMonitor.packageName;
-								if (hide && (className.contains("com.tencent.") && (className.contains("qq") || className.contains("tim"))))
-										return;
-								String QQpackageName = getSharedPreferences("MainActivity", MODE_PRIVATE).getString("installedQQ", null);
-								intent = getIntent(QQpackageName);
-								if (senderName == null)
-										break;
-								if (senderName.equals(""))
-										senderName = "  ";
-								setSummary(packageName, AppName, intent);
-								MessagingStyle(packageName, AppName, title, senderName, body, intent, notificationManagerCompat, id);
-								return;
-						default:
-								intent = getIntent(packageName);
-								setSummary(packageName, AppName, intent);
-				}
+        switch (packageName) {
+            case "com.tencent.minihd.qq":
+            case "com.tencent.mobileqqi":
+            case "com.tencent.qqlite":
+            case "com.tencent.tim":
+            case "com.tencent.mobileqq":
+            case "com.jinhaihan.qqnotfandshare":
+                String className = ForegroundMonitor.packageName;
+                if (hide && (className.contains("com.tencent.") && (className.contains("qq") || className.contains("tim"))))
+                    return;
+                String QQpackageName = getSharedPreferences("MainActivity", MODE_PRIVATE).getString("installedQQ", null);
+                intent = getIntent(QQpackageName);
+                if (senderName == null)
+                    break;
+                if (senderName.equals(""))
+                    senderName = "  ";
+                setSummary(packageName, AppName, intent);
+                MessagingStyle(packageName, AppName, title, senderName, body, intent, notificationManagerCompat, id);
+                return;
+            default:
+                intent = getIntent(packageName);
+                setSummary(packageName, AppName, intent);
+        }
 
-				Notification notification = new NotificationCompat.Builder(this, AppName)
-						.setSmallIcon(R.drawable.ic_notification)
-						.setColor(color)
-						.setStyle(new NotificationCompat.BigTextStyle()
-								.setSummaryText(AppName))
-						.setContentTitle(title)
-						.setContentText(body)
-						.setGroup(packageName)
-						.setContentIntent(intent)
-						.setAutoCancel(true)
-						.setOnlyAlertOnce(true)
-						.build();
-				notificationManagerCompat.notify(packageName, id, notification);
-		}
+        Notification notification = new NotificationCompat.Builder(this, AppName)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setColor(color)
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .setSummaryText(AppName))
+                .setContentTitle(title)
+                .setContentText(body)
+                .setGroup(packageName)
+                .setContentIntent(intent)
+                .setAutoCancel(true)
+                .setOnlyAlertOnce(true)
+                .build();
+        notificationManagerCompat.notify(packageName, id, notification);
+    }
 
-		private boolean isAppInstalled(String packageName) {
-				if (packageName == null || packageName.isEmpty()) {
-						return false;
-				}
-				List<ApplicationInfo> applicationInfo = getPackageManager().getInstalledApplications(0);
-				if (applicationInfo == null || applicationInfo.isEmpty())
-						return false;
-				for (ApplicationInfo info : applicationInfo) {
-						if (packageName.equals(info.packageName) && info.enabled) {
-								return true;
-						}
-				}
-				return false;
-		}
+    private boolean isAppInstalled(String packageName) {
+        if (packageName == null || packageName.isEmpty()) {
+            return false;
+        }
+        List<ApplicationInfo> applicationInfo = getPackageManager().getInstalledApplications(0);
+        if (applicationInfo == null || applicationInfo.isEmpty())
+            return false;
+        for (ApplicationInfo info : applicationInfo) {
+            if (packageName.equals(info.packageName) && info.enabled) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-		public void setChannel(String AppName) {
-				NotificationChannel mChannel;
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !getSharedPreferences("Channels", MODE_PRIVATE).contains(AppName)) {
-						mChannel = new NotificationChannel(AppName, AppName, IMPORTANCE_DEFAULT);
-						getSystemService(NotificationManager.class).createNotificationChannel(mChannel);
-						getSharedPreferences("Channels", MODE_PRIVATE).edit().putBoolean(AppName, true).apply();
-				}
-		}
+    public void setChannel(String AppName) {
+        NotificationChannel mChannel;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !getSharedPreferences("Channels", MODE_PRIVATE).contains(AppName)) {
+            mChannel = new NotificationChannel(AppName, AppName, IMPORTANCE_DEFAULT);
+            getSystemService(NotificationManager.class).createNotificationChannel(mChannel);
+            getSharedPreferences("Channels", MODE_PRIVATE).edit().putBoolean(AppName, true).apply();
+        }
+    }
 
-		private PendingIntent getIntent(String packageName) {
-				PendingIntent intent = null;
-				if (Package_Intent.containsKey(packageName)) {
-						intent = Package_Intent.get(packageName);
-						return intent;
-				}
-				if (packageName != null && !packageName.contains("android") && packageName.split("\\.", 2)[0].equals("com") && isAppInstalled(packageName))
-						try {
-								intent = PendingIntent.getActivity(this, 200, getPackageManager().getLaunchIntentForPackage(packageName), FLAG_UPDATE_CURRENT);
-						} catch (Exception e) {
-								Package_Intent.put(packageName, null);
-								return null;
-						}
-				Package_Intent.put(packageName, intent);
-				return intent;
-		}
+    private PendingIntent getIntent(String packageName) {
+        PendingIntent intent = null;
+        if (Package_Intent.containsKey(packageName)) {
+            intent = Package_Intent.get(packageName);
+            return intent;
+        }
+        if (packageName != null && !packageName.contains("android") && packageName.split("\\.", 2)[0].equals("com") && isAppInstalled(packageName))
+            try {
+                intent = PendingIntent.getActivity(this, 200, getPackageManager().getLaunchIntentForPackage(packageName), FLAG_UPDATE_CURRENT);
+            } catch (Exception e) {
+                Package_Intent.put(packageName, null);
+                return null;
+            }
+        Package_Intent.put(packageName, intent);
+        return intent;
+    }
 
-		private Notification getCurrentNotification(String packageName, int id) {
-				StatusBarNotification[] sbns;
-				if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M)
-						sbns = getSystemService(NotificationManager.class).getActiveNotifications();
-				else
-						return null;
-				for (StatusBarNotification sbn : sbns) {
-						if (sbn.getTag().equals(packageName) && sbn.getId() == id) {
-								return sbn.getNotification();
-						}
-				}
-				return null;
-		}
+    private Notification getCurrentNotification(String packageName, int id) {
+        StatusBarNotification[] sbns;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M)
+            sbns = getSystemService(NotificationManager.class).getActiveNotifications();
+        else
+            return null;
+        for (StatusBarNotification sbn : sbns) {
+            if (sbn.getTag().equals(packageName) && sbn.getId() == id) {
+                return sbn.getNotification();
+            }
+        }
+        return null;
+    }
 
-		public void setSummary(String packageName, String AppName, PendingIntent intent) {
-				if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-						Notification summary = new NotificationCompat.Builder(this, AppName)
-								.setSmallIcon(R.drawable.ic_notification)
-								.setColor(color)
-								.setStyle(new NotificationCompat.BigTextStyle()
-										.setSummaryText(AppName))
-								.setGroup(packageName)
-								.setContentIntent(intent)
-								.setGroupSummary(true)
-								.setAutoCancel(true)
-								.setOnlyAlertOnce(true)
-								.build();
-						notificationManagerCompat.notify(packageName, 0, summary);
-				}
-		}
+    public void setSummary(String packageName, String AppName, PendingIntent intent) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            Notification summary = new NotificationCompat.Builder(this, AppName)
+                    .setSmallIcon(R.drawable.ic_notification)
+                    .setColor(color)
+                    .setStyle(new NotificationCompat.BigTextStyle()
+                            .setSummaryText(AppName))
+                    .setGroup(packageName)
+                    .setContentIntent(intent)
+                    .setGroupSummary(true)
+                    .setAutoCancel(true)
+                    .setOnlyAlertOnce(true)
+                    .build();
+            notificationManagerCompat.notify(packageName, 0, summary);
+        }
+    }
 
-		private void MessagingStyle(String packageName, String AppName, String title, String senderName, String message, PendingIntent intent, NotificationManagerCompat notificationManagerCompat, int ID) {
-				Person sender = new Person.Builder()
-						.setName(senderName)
-						.build();
+    private void MessagingStyle(String packageName, String AppName, String title, String senderName, String message, PendingIntent intent, NotificationManagerCompat notificationManagerCompat, int ID) {
+        Person sender = new Person.Builder()
+                .setName(senderName)
+                .build();
 
-				Notification current;
-				NotificationCompat.MessagingStyle style;
-				if ((style = previousMessageStyle.get(packageName + ID)) == null)
-						if (!((current = getCurrentNotification(packageName, ID)) == null))
-								style = NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(current);
-						else {
-								style = new NotificationCompat.MessagingStyle(sender)
-										.setConversationTitle(title)
-										.setGroupConversation(true);
-								previousMessageStyle.put(packageName + ID, style);
-						}
-				Objects.requireNonNull(style).addMessage(message, new Date().getTime(), sender);
+        Notification current;
+        NotificationCompat.MessagingStyle style;
+        if (!((current = getCurrentNotification(packageName, ID)) == null)) {
+            style = NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(current);
+            style.addMessage(message, new Date().getTime(), sender);
+        } else {
+            style = new NotificationCompat.MessagingStyle(sender)
+                    .setConversationTitle(title)
+                    .setGroupConversation(true)
+                    .addMessage(message, new Date().getTime(), sender);
+        }
 
-				Notification notification = new NotificationCompat.Builder(this, AppName)
-						.setSmallIcon(R.drawable.ic_notification)
-						.setColor(color)
-						.setContentTitle(packageName)
-						.setStyle(style)
-						.setGroup(packageName)
-						.setContentIntent(intent)
-						.setAutoCancel(true)
-						.setOnlyAlertOnce(true)
-						.build();
-				notificationManagerCompat.notify(packageName, ID, notification);
-		}
+        Notification notification = new NotificationCompat.Builder(this, AppName)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setColor(color)
+                .setContentTitle(packageName)
+                .setStyle(style)
+                .setGroup(packageName)
+                .setContentIntent(intent)
+                .setAutoCancel(true)
+                .setOnlyAlertOnce(true)
+                .build();
+        notificationManagerCompat.notify(packageName, ID, notification);
+    }
 
     /*private void forQQ(String packageName, String title, String body, PendingIntent intent, NotificationManagerCompat notificationManagerCompat) {
         setChannel(packageName);
