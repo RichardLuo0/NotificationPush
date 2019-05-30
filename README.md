@@ -20,7 +20,7 @@ This app is for forwarding your notification from one phone to another using the
 ### Only for users from China
 * 服务端可能必须24小时挂梯！
 
-# if you want to compile by yourself
+# If you want to compile by yourself
 * 下载源码(Download the source code)
 * 在firebase中建立新项目(Create a new project in firebase)
 * 根据Google的firebase文档加入google-services.json文件(Add google-services.json file according to the official document of Google)

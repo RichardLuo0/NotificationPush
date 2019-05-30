@@ -7,8 +7,8 @@ android {
         applicationId "com.RichardLuo.notificationpush"
         minSdkVersion 22
         targetSdkVersion 28
-        versionCode 15
-        versionName "1.1.1"
+        versionCode 16
+        versionName "1.1.1(1)"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
