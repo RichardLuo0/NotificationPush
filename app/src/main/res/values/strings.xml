@@ -18,6 +18,10 @@
     <string name="summary_token">Local token</string>
     <string name="clear">Remove All Channels</string>
     <string name="summary_clear">Remove notification channels</string>
+    <string name="avatar">Show Avatar for QQ</string>
+    <string name="summary_avatar">Download and show QQ avatar</string>
+    <string name="login">Sync QQ Contacts Datebase</string>
+    <string name="summary_login">Please do not sync repeatly</string>
 
     <array name="priorityContent">
         <item>Normal</item>
@@ -27,8 +31,9 @@
 
     <string name="colors">Change Color</string>
     <string name="about">About</string>
-    <string name="HowToUse">
-        此应用可以通过fcm通道从一台手机向另一台手机转发通知\n如果显示fail，请检查Google框架并尝试翻墙重启应用\n你只需要将token(就是那堆乱码)复制到服务端的输入框，点击start即可开始推送\n注意设置优先级指发送的优先级，作用于服务端\n隐藏通知作用于主力机\n服务端必须24小时翻墙
-    </string>
+    <string name="HowToUse">此应用可以通过fcm通道从一台手机向另一台手机转发通知\n如果token显示fail，请检查Google框架并尝试翻墙重启应用\n你只需要将token(就是那堆乱码)复制到服务端的输入框，点击开始转发即可开始推送\n注意设置优先级指发送的优先级\n要开启头像显示需至少先同步一次数据库\n服务端必须24小时翻墙\n--by Adama</string>
     <string name="title_activity_application">Application</string>
+    <string name="title_QQ_Login">QQ Login</string>
+    <string name="clear_cookies">Clear cookies</string>
+    <string name="refresh">Refresh</string>
 </resources>

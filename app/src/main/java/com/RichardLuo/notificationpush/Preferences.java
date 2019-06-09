@@ -2,6 +2,7 @@ package com.RichardLuo.notificationpush;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.ProgressDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.ComponentName;
@@ -9,6 +10,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -27,6 +29,16 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.Objects;
 
 import static android.content.Context.MODE_PRIVATE;
@@ -109,6 +121,16 @@ public class Preferences extends PreferenceFragmentCompat {
 						}
 				});
 
+				Preference LoginPreference = findPreference("Login");
+				LoginPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+						@Override
+						public boolean onPreferenceClick(Preference preference) {
+								startActivityForResult(new Intent(getContext(), QQLogin.class), 200);
+								Toast.makeText(getActivity(), "登录成功后返回即可", Toast.LENGTH_SHORT).show();
+								return false;
+						}
+				});
+
 				Preference clear = findPreference("clear");
 				clear.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
 						@Override
@@ -143,6 +165,241 @@ public class Preferences extends PreferenceFragmentCompat {
 				}
 		}
 
+		@Override
+		public void onActivityResult(int requestCode, int resultCode, Intent data) {
+				final String hostuin;
+				final String pskey;
+				final String skey;
+				final String uin;
+				final String token;
+				if (requestCode == 200) {
+						if (resultCode == 0) {
+								Toast.makeText(getActivity(), "出现错误", Toast.LENGTH_SHORT).show();
+								return;
+						}
+						hostuin = Objects.requireNonNull(data.getExtras()).getString("hostuin");
+						pskey = Objects.requireNonNull(data.getExtras()).getString("pskey");
+						skey = Objects.requireNonNull(data.getExtras()).getString("skey");
+						uin = Objects.requireNonNull(data.getExtras()).getString("uin");
+						token = Objects.requireNonNull(data.getExtras()).getString("token");
+						Toast.makeText(getActivity(), "开始同步好友列表", Toast.LENGTH_SHORT).show();
+						if (hostuin != null) {
+								new Thread() {
+										@Override
+										public void run() {
+												try {
+														HttpURLConnection connection = connect(new URL("https://qun.qq.com/cgi-bin/qun_mgr/get_friend_list"), pskey, skey, uin, token);
+														DataOutputStream out = new DataOutputStream(connection.getOutputStream());
+														assert skey != null;
+														final long bkn = GetBkn(skey);
+														out.writeBytes("bkn=" + bkn);
+														out.flush();
+														out.close();
+														connection.connect();
+														final SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(Objects.requireNonNull(getContext()).getDatabasePath("friends.db"), null);
+														if (connection.getResponseCode() == 200) {
+																String json = parseResult(connection.getInputStream());
+																if (json.length() < 100) throw new Exception();
+																JSONObject friendslist = new JSONObject(json.substring(37, json.length() - 1));
+																db.execSQL("drop table if exists friends");
+																db.execSQL("create table friends(uin varchar primary key,name varchar)");
+																for (int i = 0; i < friendslist.length(); i++) {
+																		JSONArray friends = friendslist.getJSONObject(String.valueOf(i)).getJSONArray("mems");
+																		for (int j = 0; j < friends.length(); j++) {
+																				JSONObject friend = friends.getJSONObject(j);
+																				db.execSQL("INSERT INTO friends VALUES (?, ?)", new Object[]{String.valueOf(friend.getInt("uin")), uncode(friend.getString("name"))});
+																		}
+																}
+														}
+														connection.disconnect();
+
+														sleep(200);
+														if (getActivity() != null)
+																getActivity().runOnUiThread(new Runnable() {
+																		public void run() {
+																				Toast.makeText(getContext(), "开始同步群列表", Toast.LENGTH_SHORT).show();
+																		}
+																});
+														HttpURLConnection getGroup = connect(new URL("https://qun.qq.com/cgi-bin/qun_mgr/get_group_list"), pskey, skey, uin, token);
+														DataOutputStream getGroupOut = new DataOutputStream(getGroup.getOutputStream());
+														getGroupOut.writeBytes("bkn=" + bkn);
+														getGroupOut.flush();
+														getGroupOut.close();
+														getGroup.connect();
+														if (getGroup.getResponseCode() == 200) {
+																String json = parseResult(getGroup.getInputStream());
+																getGroup.disconnect();
+																if (json.length() < 100) throw new Exception();
+																JSONObject allList = new JSONObject(json);
+																String joinList = allList.getJSONArray("join").toString().replace("]", ",");
+																String manageList = allList.getJSONArray("manage").toString().substring(1);
+																final JSONArray groupsList = new JSONArray(joinList + manageList);
+																final String[] groupNames = new String[groupsList.length()];
+																for (int i = 0; i < groupsList.length(); i++) {
+																		JSONObject group = groupsList.getJSONObject(i);
+																		groupNames[i] = uncode(group.getString("gn"));
+																}
+																if (getActivity() != null)
+																		getActivity().runOnUiThread(new Runnable() {
+																				public void run() {
+																						final ArrayList<Integer> choices = new ArrayList<>();
+																						AlertDialog.Builder ChoiceDialog = new AlertDialog.Builder(getActivity());
+																						ChoiceDialog.setTitle("选择要同步的群组");
+																						ChoiceDialog.setMultiChoiceItems(groupNames, null, new DialogInterface.OnMultiChoiceClickListener() {
+																								@Override
+																								public void onClick(DialogInterface dialog, int which, boolean isChecked) {
+																										if (isChecked)
+																												choices.add(which);
+																										else
+																												choices.remove(Integer.valueOf(which));
+																								}
+																						});
+																						ChoiceDialog.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+																								@Override
+																								public void onClick(DialogInterface dialog, int which) {
+																										final ProgressDialog waitingDialog = new ProgressDialog(getActivity());
+																										waitingDialog.setTitle("同步中");
+																										waitingDialog.setMessage(groupNames[choices.get(0)]);
+																										waitingDialog.setIndeterminate(true);
+																										waitingDialog.setCancelable(false);
+																										waitingDialog.show();
+																										new Thread() {
+																												@Override
+																												public void run() {
+																														for (final Integer choice : choices) {
+																																if (getActivity() != null)
+																																		getActivity().runOnUiThread(new Runnable() {
+																																				public void run() {
+																																						waitingDialog.setMessage(groupNames[choice]);
+																																				}
+																																		});
+																																final String name = groupNames[choice];
+																																try {
+																																		int temp = 41;
+																																		int last = 0;
+																																		db.execSQL("drop table if exists '" + name + "'");
+																																		db.execSQL("create table '" + name + "'(uin varchar primary key,name varchar)");
+																																		while (temp >= 41) {
+																																				HttpURLConnection getMember = connect(new URL("https://qun.qq.com/cgi-bin/qun_mgr/search_group_members"), pskey, skey, uin, token);
+																																				DataOutputStream getMemberout = new DataOutputStream(getMember.getOutputStream());
+																																				getMemberout.writeBytes("st=" + last + "&end=" + (last + 40) + "&sort=0&bkn=" + bkn + "&gc=" + groupsList.getJSONObject(choice).getInt("gc"));
+																																				last += 41;
+																																				getMemberout.flush();
+																																				getMemberout.close();
+																																				getMember.connect();
+																																				if (getMember.getResponseCode() == 200) {
+																																						String groupjson = parseResult(getMember.getInputStream());
+																																						getMember.disconnect();
+																																						JSONObject all = new JSONObject(groupjson);
+																																						if (groupjson.length() < 40 || all.getString("em").contains("malicious"))
+																																								throw new Exception();
+																																						JSONArray members;
+																																						if (all.has("mems"))
+																																								members = all.getJSONArray("mems");
+																																						else
+																																								break;
+																																						temp = members.length();
+																																						for (int j = 0; j < temp; j++) {
+																																								JSONObject member = members.getJSONObject(j);
+																																								db.execSQL("INSERT INTO '" + name + "' VALUES (?, ?)", new Object[]{String.valueOf(member.getInt("uin")), uncode(member.getString("card"))});
+																																						}
+																																				}
+																																				getMember.disconnect();
+																																				sleep(200);
+																																		}
+																																		if (getActivity() != null)
+																																				getActivity().runOnUiThread(new Runnable() {
+																																						public void run() {
+																																								Toast.makeText(getContext(), name + "同步成功", Toast.LENGTH_SHORT).show();
+																																						}
+																																				});
+																																		sleep(100);
+																																} catch (Exception e) {
+																																		Objects.requireNonNull(getActivity()).runOnUiThread(new Runnable() {
+																																				public void run() {
+																																						Toast.makeText(getContext(), name + "解析错误", Toast.LENGTH_SHORT).show();
+																																				}
+																																		});
+																																		try {
+																																				sleep(100);
+																																		} catch (InterruptedException e1) {
+																																				e1.printStackTrace();
+																																		}
+																																		e.printStackTrace();
+																																}
+																														}
+																														waitingDialog.dismiss();
+																														db.close();
+																												}
+																										}.start();
+																								}
+																						});
+																						ChoiceDialog.show();
+																				}
+																		});
+														}
+														getGroup.disconnect();
+														if (getActivity() != null)
+																getActivity().runOnUiThread(new Runnable() {
+																		public void run() {
+																				Toast.makeText(getContext(), "列表加载成功", Toast.LENGTH_SHORT).show();
+																		}
+																});
+												} catch (Exception e) {
+														Objects.requireNonNull(getActivity()).runOnUiThread(new Runnable() {
+																public void run() {
+																		Toast.makeText(getContext(), "解析错误", Toast.LENGTH_SHORT).show();
+																}
+														});
+														e.printStackTrace();
+												}
+										}
+								}.start();
+						}
+				}
+		}
+
+		private HttpURLConnection connect(URL url, String pskey, String skey, String uin, String token) throws IOException {
+				HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+				connection.setDoOutput(true);
+				connection.setDoInput(true);
+				connection.setConnectTimeout(1000);
+				connection.setReadTimeout(1000);
+				connection.setRequestMethod("POST");
+				connection.setRequestProperty("cookie", "p_skey=" + pskey + ";p_uin=" + uin + ";pt4_token=" + token + ";uin=" + uin + ";skey=" + skey);
+				return connection;
+		}
+
+		private String parseResult(InputStream inputStream) throws IOException {
+				ByteArrayOutputStream result = new ByteArrayOutputStream();
+				byte[] buffer = new byte[1024];
+				int length;
+				while ((length = inputStream.read(buffer)) != -1) {
+						result.write(buffer, 0, length);
+				}
+				inputStream.close();
+				return result.toString("UTF-8");
+		}
+
+		private long GetBkn(String skey) {
+				int t = 5381, n = 0;
+				int o = skey.length();
+				for (; n < o; ++n)
+						t += (t << 5) + skey.charAt(n);
+				return 2147483647 & t;
+		}
+
+		private String uncode(String string) {
+				String result = string.replace("&nbsp;", " ").replace("&amp;", "&");
+				String[] hex = result.split("\\\\u");
+				for (int i = 1; i < hex.length; i++) {
+						String unicode = hex[i].substring(0, 5);
+						int data = Integer.parseInt(unicode, 16);
+						result = result.replace(unicode, String.valueOf(data));
+				}
+				return result;
+		}
+
 		private boolean isNotificationListenersEnabled() {
 				String pkgName = Objects.requireNonNull(getActivity()).getPackageName();
 				final String flat = Settings.Secure.getString(getActivity().getContentResolver(), "enabled_notification_listeners");
@@ -159,7 +416,6 @@ public class Preferences extends PreferenceFragmentCompat {
 				}
 				return false;
 		}
-
 
 		private boolean isAccessibilitySettingsOn(Context mContext) {
 				int accessibilityEnabled;

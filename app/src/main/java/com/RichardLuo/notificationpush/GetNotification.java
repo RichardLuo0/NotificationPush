@@ -118,8 +118,8 @@ public class GetNotification extends NotificationListenerService {
 						URL url = new URL("https://fcm.googleapis.com/fcm/send");
 						connection = (HttpURLConnection) url.openConnection();
 						connection.setDoOutput(true);
-						connection.setConnectTimeout(1000);
-						connection.setReadTimeout(1000);
+						connection.setConnectTimeout(2000);
+						connection.setReadTimeout(2000);
 						connection.setRequestMethod("POST");
 						connection.setRequestProperty("Content-Type", "application/json");
 						connection.setRequestProperty("Authorization", "key=" + Authorization);

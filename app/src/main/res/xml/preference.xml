@@ -24,6 +24,7 @@
                 android:targetClass="com.RichardLuo.notificationpush.Application"
                 android:targetPackage="com.RichardLuo.notificationpush" />
         </Preference>
+
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/client">
@@ -39,6 +40,15 @@
             android:key="clear"
             android:summary="@string/summary_clear"
             android:title="@string/clear" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="sendQQ"
+            android:summary="@string/summary_avatar"
+            android:title="@string/avatar" />
+        <Preference
+            android:key="Login"
+            android:summary="@string/summary_login"
+            android:title="@string/login" />
     </PreferenceCategory>
 
 </PreferenceScreen>

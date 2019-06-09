@@ -9,6 +9,7 @@
         <item name="alertDialogTheme">@style/AlertDialog</item>
         <item name="android:colorControlNormal">?android:attr/colorAccent</item>
         <item name="android:colorControlActivated">?android:attr/colorAccent</item>
+        <item name="android:colorEdgeEffect">?android:attr/colorAccent</item>
     </style>
 
     <style name="actionBarTheme">
@@ -18,6 +19,7 @@
 
     <style name="AlertDialog" parent="@style/Theme.AppCompat.Light.Dialog.Alert">
         <item name="android:colorAccent">?android:attr/color</item>
+        <item name="colorAccent">?android:attr/color</item>
     </style>
 
     <!-- Base application theme. -->
