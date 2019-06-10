@@ -228,6 +228,12 @@ public class Preferences extends PreferenceFragmentCompat {
                                         e.printStackTrace();
                                     }
                                     db.close();
+                                    if (getActivity() != null)
+                                        getActivity().runOnUiThread(new Runnable() {
+                                            public void run() {
+                                                Toast.makeText(getContext(), "同步成功", Toast.LENGTH_SHORT).show();
+                                            }
+                                        });
                                 }
                             }.start();
                             break;
@@ -355,7 +361,7 @@ public class Preferences extends PreferenceFragmentCompat {
                                                                                 e.printStackTrace();
                                                                             }
                                                                             try {
-                                                                                sleep(100);
+                                                                                sleep(400);
                                                                             } catch (InterruptedException e1) {
                                                                                 e1.printStackTrace();
                                                                             }
