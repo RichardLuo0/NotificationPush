@@ -3,23 +3,32 @@ package com.RichardLuo.notificationpush;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.ProgressDialog;
-import android.content.*;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.preference.EditTextPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.SwitchPreference;
+
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -28,6 +37,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Objects;
@@ -309,7 +319,8 @@ public class Preferences extends PreferenceFragmentCompat {
                                                                                         temp = members.length();
                                                                                         for (int j = 0; j < temp; j++) {
                                                                                             JSONObject member = members.getJSONObject(j);
-                                                                                            db.execSQL("INSERT INTO '" + name + "' VALUES (?, ?)", new Object[]{String.valueOf(member.getInt("uin")), uncode(member.getString("card"))});
+                                                                                            String card = member.getString("card");
+                                                                                            db.execSQL("INSERT INTO '" + name + "' VALUES (?, ?)", new Object[]{String.valueOf(member.getInt("uin")), uncode(card.equals("") ? member.getString("nick") : card)});
                                                                                         }
                                                                                     }
                                                                                     getMember.disconnect();
@@ -325,6 +336,13 @@ public class Preferences extends PreferenceFragmentCompat {
                                                                                 Objects.requireNonNull(getActivity()).runOnUiThread(new Runnable() {
                                                                                     public void run() {
                                                                                         Toast.makeText(getContext(), name + "被反恶意机制拦截", Toast.LENGTH_SHORT).show();
+                                                                                    }
+                                                                                });
+                                                                                e.printStackTrace();
+                                                                            } catch (SocketTimeoutException e) {
+                                                                                Objects.requireNonNull(getActivity()).runOnUiThread(new Runnable() {
+                                                                                    public void run() {
+                                                                                        Toast.makeText(getContext(), name + "网络超时", Toast.LENGTH_SHORT).show();
                                                                                     }
                                                                                 });
                                                                                 e.printStackTrace();
@@ -381,8 +399,8 @@ public class Preferences extends PreferenceFragmentCompat {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setDoOutput(true);
         connection.setDoInput(true);
-        connection.setConnectTimeout(1000);
-        connection.setReadTimeout(1000);
+        connection.setConnectTimeout(2000);
+        connection.setReadTimeout(2000);
         connection.setRequestMethod("POST");
         connection.setRequestProperty("cookie", "p_skey=" + pskey + ";p_uin=" + uin + ";pt4_token=" + token + ";uin=" + uin + ";skey=" + skey);
         return connection;
