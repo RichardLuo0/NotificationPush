@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="teal">#0097A7</color>
-    <color name="red">#D32F2F</color>
-    <color name="pink">#C2185B</color>
-    <color name="purple">#7B1FA2</color>
-    <color name="blue">#303F9F</color>
-    <color name="yellow">#FBC02D</color>
-    <color name="grey">#607D8B</color>
+    <color name="red">#d32f2f</color>
+    <color name="pink">#d81b60</color>
+    <color name="purple">#6a1b9a</color>
+    <color name="blue">#1565c0</color>
+    <color name="yellow">#ff8f00</color>
+    <color name="grey">#546e7a</color>
 
     <color name="colorPrimaryDark">#EAEAEA</color>
     <color name="black">#000000</color>

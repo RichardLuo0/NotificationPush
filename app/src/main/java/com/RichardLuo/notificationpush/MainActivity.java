@@ -104,7 +104,11 @@ public class MainActivity extends AppCompatActivity {
                 normalDialog.setPositiveButton("捐赠", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        startActivity(new Intent().setData(Uri.parse("alipays://platformapi/startapp?saId=10000007&clientVersion=3.7.0.0718&qrcode=https://qr.alipay.com/fkx0746746ugqrzxkrle7c0?_s=web-other")).setAction("android.intent.action.VIEW"));
+                        try {
+                            startActivity(new Intent().setData(Uri.parse("alipays://platformapi/startapp?saId=10000007&clientVersion=3.7.0.0718&qrcode=https://qr.alipay.com/fkx0746746ugqrzxkrle7c0?_s=web-other")).setAction("android.intent.action.VIEW"));
+                        } catch (Exception e) {
+                            Toast.makeText(getApplicationContext(), "Alipay not found!", Toast.LENGTH_SHORT).show();
+                        }
                     }
                 });
                 normalDialog.setNeutralButton("GITHUB", new DialogInterface.OnClickListener() {

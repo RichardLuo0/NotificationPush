@@ -14,6 +14,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.text.Html;
 import android.text.TextUtils;
 import android.widget.Toast;
 
@@ -209,12 +210,12 @@ public class Preferences extends PreferenceFragmentCompat {
                                             if (json.length() < 100) throw new Exception();
                                             JSONObject friendslist = new JSONObject(json.substring(37, json.length() - 1));
                                             db.execSQL("drop table if exists friends");
-                                            db.execSQL("create table friends(uin varchar primary key,name varchar)");
+                                            db.execSQL("create table friends(uin text primary key,name text)");
                                             for (int i = 0; i < friendslist.length(); i++) {
                                                 JSONArray friends = friendslist.getJSONObject(String.valueOf(i)).getJSONArray("mems");
                                                 for (int j = 0; j < friends.length(); j++) {
                                                     JSONObject friend = friends.getJSONObject(j);
-                                                    db.execSQL("INSERT INTO friends VALUES (?, ?)", new Object[]{String.valueOf(friend.getInt("uin")), uncode(friend.getString("name"))});
+                                                    db.execSQL("INSERT INTO friends VALUES (?, ?)", new Object[]{String.valueOf(friend.getInt("uin")), Html.fromHtml(friend.getString("name").replace("&nbsp;", "%20").replace("/", "%2f")).toString()});
                                                 }
                                             }
                                         }
@@ -260,7 +261,7 @@ public class Preferences extends PreferenceFragmentCompat {
                                             final String[] groupNames = new String[groupsList.length()];
                                             for (int i = 0; i < groupsList.length(); i++) {
                                                 JSONObject group = groupsList.getJSONObject(i);
-                                                groupNames[i] = uncode(group.getString("gn"));
+                                                groupNames[i] = group.getString("gn");
                                             }
                                             if (getActivity() != null)
                                                 getActivity().runOnUiThread(new Runnable() {
@@ -280,6 +281,8 @@ public class Preferences extends PreferenceFragmentCompat {
                                                         ChoiceDialog.setPositiveButton("确定", new DialogInterface.OnClickListener() {
                                                             @Override
                                                             public void onClick(DialogInterface dialog, int which) {
+                                                                if (choices.isEmpty())
+                                                                    return;
                                                                 final ProgressDialog waitingDialog = new ProgressDialog(getActivity());
                                                                 waitingDialog.setTitle("同步中");
                                                                 waitingDialog.setMessage(groupNames[choices.get(0)]);
@@ -301,7 +304,7 @@ public class Preferences extends PreferenceFragmentCompat {
                                                                                 int temp = 41;
                                                                                 int last = 0;
                                                                                 db.execSQL("drop table if exists '" + name + "'");
-                                                                                db.execSQL("create table '" + name + "'(uin varchar primary key,name varchar)");
+                                                                                db.execSQL("create table '" + name + "'(uin text primary key,name text)");
                                                                                 getActivity().getSharedPreferences("groups", MODE_PRIVATE).edit().putBoolean(name, true).apply();
                                                                                 while (temp >= 41) {
                                                                                     HttpURLConnection getMember = connect(new URL("https://qun.qq.com/cgi-bin/qun_mgr/search_group_members"), pskey, skey, uin, token);
@@ -326,7 +329,7 @@ public class Preferences extends PreferenceFragmentCompat {
                                                                                         for (int j = 0; j < temp; j++) {
                                                                                             JSONObject member = members.getJSONObject(j);
                                                                                             String card = member.getString("card");
-                                                                                            db.execSQL("INSERT INTO '" + name + "' VALUES (?, ?)", new Object[]{String.valueOf(member.getInt("uin")), uncode(card.equals("") ? member.getString("nick") : card)});
+                                                                                            db.execSQL("INSERT INTO '" + name + "' VALUES (?, ?)", new Object[]{String.valueOf(member.getInt("uin")), Html.fromHtml((card.equals("") ? member.getString("nick") : card).replace("&nbsp;", "%20").replace("/", "%2f")).toString()});
                                                                                         }
                                                                                     }
                                                                                     getMember.disconnect();
@@ -429,17 +432,6 @@ public class Preferences extends PreferenceFragmentCompat {
         for (; n < o; ++n)
             t += (t << 5) + skey.charAt(n);
         return 2147483647 & t;
-    }
-
-    private String uncode(String string) {
-        String result = string.replace("&nbsp;", " ").replace("&amp;", "&");
-        String[] hex = result.split("\\\\u");
-        for (int i = 1; i < hex.length; i++) {
-            String unicode = hex[i].substring(0, 5);
-            int data = Integer.parseInt(unicode, 16);
-            result = result.replace(unicode, String.valueOf(data));
-        }
-        return result;
     }
 
     private boolean isNotificationListenersEnabled() {

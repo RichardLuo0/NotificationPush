@@ -9,6 +9,7 @@ import android.webkit.CookieManager;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.Objects;
@@ -56,6 +57,9 @@ public class QQLogin extends AppCompatActivity {
             case R.id.refresh:
                 web.reload();
                 break;
+            case android.R.id.home:
+                finish();
+                return true;
         }
         return super.onOptionsItemSelected(item);
     }

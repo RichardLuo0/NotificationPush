@@ -7,13 +7,21 @@ import android.app.PendingIntent;
 import android.content.pm.ApplicationInfo;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.graphics.*;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.Rect;
 import android.os.Build;
 import android.service.notification.StatusBarNotification;
+
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.app.Person;
 import androidx.core.graphics.drawable.IconCompat;
+
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
@@ -90,10 +98,14 @@ public class FCMReceiver extends FirebaseMessagingService {
                             Cursor cursor;
                             if (senderName.equals(title)) {
                                 db = SQLiteDatabase.openOrCreateDatabase(this.getDatabasePath("friends.db"), null);
-                                cursor = db.query("friends", new String[]{"uin"}, "name ='" + senderName + "'", null, null, null, null);
+                                cursor = db.query("friends", new String[]{"uin"}, "name ='" + encodeSendername + "'", null, null, null, null);
                             } else if (getSharedPreferences("groups", MODE_PRIVATE).contains(title)) {
                                 db = SQLiteDatabase.openOrCreateDatabase(this.getDatabasePath("friends.db"), null);
-                                cursor = db.query("'" + title + "'", new String[]{"uin"}, "name ='" + senderName + "'", null, null, null, null);
+                                Cursor cursorTemp = db.query("'" + title + "'", new String[]{"uin"}, "name ='" + encodeSendername + "'", null, null, null, null);
+                                if (cursorTemp.getCount() == 0) {
+                                    cursorTemp.close();
+                                    cursor = db.query("friends", new String[]{"uin"}, "name ='" + encodeSendername + "'", null, null, null, null);
+                                } else cursor = cursorTemp;
                             } else
                                 break out;
                             if (cursor.getCount() != 0) {
@@ -101,7 +113,8 @@ public class FCMReceiver extends FirebaseMessagingService {
                                     String QQnumber = cursor.getString(0);
                                     cursor.close();
                                     db.close();
-                                    HttpURLConnection connection = (HttpURLConnection) new URL("https://qlogo3.store.qq.com/qzone/" + QQnumber + "/" + QQnumber + "/50.png").openConnection();
+                                    HttpURLConnection connection = (HttpURLConnection) new URL("https://q4.qlogo.cn/g?b=qq&s=140&nk=" + QQnumber).openConnection();
+                                    connection.setRequestMethod("GET");
                                     connection.setDoInput(true);
                                     connection.setConnectTimeout(1000);
                                     connection.setReadTimeout(1000);
@@ -244,10 +257,13 @@ public class FCMReceiver extends FirebaseMessagingService {
             style = NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(current);
             style.addMessage(message, new Date().getTime(), sender);
         } else {
-            style = new NotificationCompat.MessagingStyle(sender)
-                    .setConversationTitle(title)
-                    .setGroupConversation(true)
-                    .addMessage(message, new Date().getTime(), sender);
+            style = new NotificationCompat.MessagingStyle(sender);
+            if (title.equals(senderName))
+                style.setGroupConversation(false);
+            else {
+                style.setConversationTitle(title).setGroupConversation(true);
+            }
+            style.addMessage(message, new Date().getTime(), sender);
         }
 
         Notification notification = new NotificationCompat.Builder(this, AppName)
@@ -262,59 +278,4 @@ public class FCMReceiver extends FirebaseMessagingService {
                 .build();
         notificationManagerCompat.notify(packageName, ID, notification);
     }
-
-    /*private void forQQ(String packageName, String title, String body, PendingIntent intent, NotificationManagerCompat notificationManagerCompat) {
-        setChannel(packageName);
-        Notification notification;
-        if (!(body.contains("联系人给你") || title.contains("QQ空间") || body.contains("你收到了"))) {
-            int TitleID = StringToA(title.split("\\s\\(")[0]);
-            String[] bodySplit = body.split(":");
-            Person sender;
-            String message;
-            if (bodySplit.length == 1 || body.split("\\s")[0].equals("")) {
-                sender = new Person.Builder()
-                        .setName(title.split("\\s\\(")[0])
-                        .build();
-                message = body;
-            } else {
-                sender = new Person.Builder()
-                        .setName(bodySplit[0])
-                        .build();
-                message = bodySplit[1];
-            }
-            NotificationCompat.MessagingStyle style;
-            Notification current;
-            if (!((current = getCurrentNotification(packageName, TitleID)) == null)) {
-                style = NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(current);
-                style.addMessage(message, new Date().getTime(), sender);
-            } else {
-                style = new NotificationCompat.MessagingStyle(sender)
-                        .setConversationTitle(title)
-                        .addMessage(message, new Date().getTime(), sender);
-            }
-            notification = new NotificationCompat.Builder(this, packageName)
-                    .setSmallIcon(R.drawable.ic_notification)
-                    .setColor(color)
-                    .setContentTitle(packageName)
-                    .setStyle(style)
-                    .setGroup(packageName)
-                    .setContentIntent(intent)
-                    .setAutoCancel(true)
-                    .setOnlyAlertOnce(true)
-                    .build();
-            notificationManagerCompat.notify(packageName, TitleID, notification);
-        } else {
-            notification = new NotificationCompat.Builder(this, packageName)
-                    .setSmallIcon(R.drawable.ic_notification)
-                    .setColor(color)
-                    .setContentTitle(title)
-                    .setContentText(body)
-                    .setGroup(packageName)
-                    .setContentIntent(intent)
-                    .setAutoCancel(true)
-                    .setOnlyAlertOnce(true)
-                    .build();
-            notificationManagerCompat.notify(packageName, 0, notification);
-        }
-    }*/
 }
