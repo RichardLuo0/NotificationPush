@@ -88,6 +88,7 @@ public class FCMReceiver extends FirebaseMessagingService {
                 if (senderName.equals(""))
                     senderName = "  ";
                 IconCompat icon = null;
+                Bitmap largeIcon = null;
                 out:
                 if (getDefaultSharedPreferences(this).getBoolean("sendQQ", false) && this.getDatabasePath("friends.db").exists()) {
                     String encodeSendername = senderName.replace(" ", "%20").replace("/", "%2f");
@@ -96,6 +97,7 @@ public class FCMReceiver extends FirebaseMessagingService {
                         if (!file.exists()) {
                             SQLiteDatabase db;
                             Cursor cursor;
+                            String groupNumber = null;
                             if (senderName.equals(title)) {
                                 db = SQLiteDatabase.openOrCreateDatabase(this.getDatabasePath("friends.db"), null);
                                 cursor = db.query("friends", new String[]{"uin"}, "name ='" + encodeSendername + "'", null, null, null, null);
@@ -106,43 +108,30 @@ public class FCMReceiver extends FirebaseMessagingService {
                                     cursorTemp.close();
                                     cursor = db.query("friends", new String[]{"uin"}, "name ='" + encodeSendername + "'", null, null, null, null);
                                 } else cursor = cursorTemp;
-                            } else
+                                groupNumber = getSharedPreferences("groupsNumber", MODE_PRIVATE).getString(title, null);
+                            } else {
+                                groupNumber = getSharedPreferences("groupsNumber", MODE_PRIVATE).getString(title, null);
+                                largeIcon = downloadIcon("https://p.qlogo.cn/gh/" + groupNumber + "/" + groupNumber + "/100", title);
                                 break out;
+                            }
                             if (cursor.getCount() != 0) {
                                 if (cursor.moveToFirst()) {
                                     String QQnumber = cursor.getString(0);
                                     cursor.close();
                                     db.close();
-                                    HttpURLConnection connection = (HttpURLConnection) new URL("https://q4.qlogo.cn/g?b=qq&s=140&nk=" + QQnumber).openConnection();
-                                    connection.setRequestMethod("GET");
-                                    connection.setDoInput(true);
-                                    connection.setConnectTimeout(1000);
-                                    connection.setReadTimeout(1000);
-                                    connection.connect();
-                                    if (connection.getResponseCode() == 200 || connection.getResponseCode() == 304) {
-                                        InputStream inputStream = connection.getInputStream();
-                                        FileOutputStream out = new FileOutputStream(new File(getCacheDir(), encodeSendername));
-                                        Bitmap avatar = BitmapFactory.decodeStream(inputStream);
-                                        int width = avatar.getWidth();
-                                        Bitmap output = Bitmap.createBitmap(width, width, Bitmap.Config.ARGB_8888);
-                                        Canvas canvas = new Canvas(output);
-                                        Rect rect = new Rect(0, 0, width, width);
-                                        Paint paint = new Paint();
-                                        paint.setAntiAlias(true);
-                                        canvas.drawARGB(0, 0, 0, 0);
-                                        paint.setColor(0xff424242);
-                                        canvas.drawCircle(width / 2f, width / 2f, width / 2f, paint);
-                                        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
-                                        canvas.drawBitmap(avatar, rect, rect, paint);
-                                        output.compress(Bitmap.CompressFormat.PNG, 100, out);
-                                    }
-                                    connection.disconnect();
+                                    Bitmap bitmap = downloadIcon("https://q4.qlogo.cn/g?b=qq&s=140&nk=" + QQnumber, encodeSendername);
+                                    if (groupNumber == null)
+                                        largeIcon = bitmap;
+                                    else
+                                        largeIcon = downloadIcon("https://p.qlogo.cn/gh/" + groupNumber + "/" + groupNumber + "/100", title);
                                 }
                             } else {
                                 cursor.close();
                                 db.close();
                                 break out;
                             }
+                        } else {
+                            largeIcon = BitmapFactory.decodeFile(this.getCacheDir().getPath() + "/" + encodeSendername);
                         }
                         icon = IconCompat.createWithBitmap(BitmapFactory.decodeFile(this.getCacheDir().getPath() + "/" + encodeSendername));
                     } catch (IOException e) {
@@ -150,7 +139,7 @@ public class FCMReceiver extends FirebaseMessagingService {
                     }
                 }
                 setSummary(packageName, AppName, intent);
-                MessagingStyle(packageName, AppName, title, senderName, body, intent, notificationManagerCompat, id, icon);
+                MessagingStyle(packageName, AppName, title, senderName, body, intent, id, icon, largeIcon);
                 return;
             default:
                 intent = getIntent(packageName);
@@ -170,6 +159,35 @@ public class FCMReceiver extends FirebaseMessagingService {
                 .setOnlyAlertOnce(true)
                 .build();
         notificationManagerCompat.notify(packageName, id, notification);
+    }
+
+    private Bitmap downloadIcon(String url, String name) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setRequestMethod("GET");
+        connection.setDoInput(true);
+        connection.setConnectTimeout(1000);
+        connection.setReadTimeout(1000);
+        connection.connect();
+        if (connection.getResponseCode() == 200 || connection.getResponseCode() == 304) {
+            InputStream inputStream = connection.getInputStream();
+            FileOutputStream out = new FileOutputStream(new File(getCacheDir(), name));
+            Bitmap avatar = BitmapFactory.decodeStream(inputStream);
+            int width = avatar.getWidth();
+            Bitmap output = Bitmap.createBitmap(width, width, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(output);
+            Rect rect = new Rect(0, 0, width, width);
+            Paint paint = new Paint();
+            paint.setAntiAlias(true);
+            canvas.drawARGB(0, 0, 0, 0);
+            paint.setColor(0xff424242);
+            canvas.drawCircle(width / 2f, width / 2f, width / 2f, paint);
+            paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+            canvas.drawBitmap(avatar, rect, rect, paint);
+            output.compress(Bitmap.CompressFormat.PNG, 100, out);
+            return output;
+        }
+        connection.disconnect();
+        return null;
     }
 
     private boolean isAppInstalled(String packageName) {
@@ -244,7 +262,7 @@ public class FCMReceiver extends FirebaseMessagingService {
         }
     }
 
-    private void MessagingStyle(String packageName, String AppName, String title, String senderName, String message, PendingIntent intent, NotificationManagerCompat notificationManagerCompat, int ID, IconCompat icon) {
+    private void MessagingStyle(String packageName, String AppName, String title, String senderName, String message, PendingIntent intent, int ID, IconCompat icon, Bitmap largeIcon) {
         Person.Builder personBuilder = new Person.Builder()
                 .setName(senderName);
         if (icon != null)
@@ -260,22 +278,22 @@ public class FCMReceiver extends FirebaseMessagingService {
             style = new NotificationCompat.MessagingStyle(sender);
             if (title.equals(senderName))
                 style.setGroupConversation(false);
-            else {
+            else
                 style.setConversationTitle(title).setGroupConversation(true);
-            }
             style.addMessage(message, new Date().getTime(), sender);
         }
 
-        Notification notification = new NotificationCompat.Builder(this, AppName)
+        NotificationCompat.Builder notification = new NotificationCompat.Builder(this, AppName)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setColor(color)
                 .setContentTitle(packageName)
-                .setStyle(style)
-                .setGroup(packageName)
+                .setStyle(style);
+        if (largeIcon != null)
+            notification.setLargeIcon(largeIcon);
+        notification.setGroup(packageName)
                 .setContentIntent(intent)
                 .setAutoCancel(true)
-                .setOnlyAlertOnce(true)
-                .build();
-        notificationManagerCompat.notify(packageName, ID, notification);
+                .setOnlyAlertOnce(true);
+        notificationManagerCompat.notify(packageName, ID, notification.build());
     }
 }

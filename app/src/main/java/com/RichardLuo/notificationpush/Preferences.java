@@ -261,7 +261,9 @@ public class Preferences extends PreferenceFragmentCompat {
                                             final String[] groupNames = new String[groupsList.length()];
                                             for (int i = 0; i < groupsList.length(); i++) {
                                                 JSONObject group = groupsList.getJSONObject(i);
-                                                groupNames[i] = group.getString("gn");
+                                                String groupName = Html.fromHtml(group.getString("gn")).toString();
+                                                groupNames[i] = groupName;
+                                                Objects.requireNonNull(getActivity()).getSharedPreferences("groupsNumber", MODE_PRIVATE).edit().putString(groupName, group.getString("gc")).apply();
                                             }
                                             if (getActivity() != null)
                                                 getActivity().runOnUiThread(new Runnable() {
@@ -292,6 +294,7 @@ public class Preferences extends PreferenceFragmentCompat {
                                                                 new Thread() {
                                                                     @Override
                                                                     public void run() {
+                                                                        getActivity().getSharedPreferences("groups", MODE_PRIVATE).edit().clear().apply();
                                                                         for (final Integer choice : choices) {
                                                                             if (getActivity() != null)
                                                                                 getActivity().runOnUiThread(new Runnable() {
