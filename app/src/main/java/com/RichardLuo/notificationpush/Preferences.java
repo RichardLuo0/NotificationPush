@@ -232,6 +232,7 @@ public class Preferences extends PreferenceFragmentCompat {
                                     if (getActivity() != null)
                                         getActivity().runOnUiThread(new Runnable() {
                                             public void run() {
+                                                getActivity().getSharedPreferences("groups", MODE_PRIVATE).edit().putBoolean("sync_friends", true).apply();
                                                 Toast.makeText(getContext(), "同步成功", Toast.LENGTH_SHORT).show();
                                             }
                                         });
@@ -294,7 +295,12 @@ public class Preferences extends PreferenceFragmentCompat {
                                                                 new Thread() {
                                                                     @Override
                                                                     public void run() {
+                                                                        boolean isSyncfriends = false;
+                                                                        if (getActivity().getSharedPreferences("groups", MODE_PRIVATE).contains("sync_friends"))
+                                                                            isSyncfriends = true;
                                                                         getActivity().getSharedPreferences("groups", MODE_PRIVATE).edit().clear().apply();
+                                                                        if (isSyncfriends)
+                                                                            getActivity().getSharedPreferences("groups", MODE_PRIVATE).edit().putBoolean("sync_friends", true).apply();
                                                                         for (final Integer choice : choices) {
                                                                             if (getActivity() != null)
                                                                                 getActivity().runOnUiThread(new Runnable() {

@@ -89,18 +89,21 @@ public class FCMReceiver extends FirebaseMessagingService {
                     senderName = "  ";
                 IconCompat icon = null;
                 Bitmap largeIcon = null;
-                out:
                 if (getDefaultSharedPreferences(this).getBoolean("sendQQ", false) && this.getDatabasePath("friends.db").exists()) {
+                    boolean isfriend = senderName.equals(title);
                     String encodeSendername = senderName.replace(" ", "%20").replace("/", "%2f");
                     File file = new File(this.getCacheDir().getPath() + "/" + encodeSendername);
+                    out:
                     try {
                         if (!file.exists()) {
                             SQLiteDatabase db;
                             Cursor cursor;
-                            String groupNumber = null;
-                            if (senderName.equals(title)) {
+                            if (isfriend) {
                                 db = SQLiteDatabase.openOrCreateDatabase(this.getDatabasePath("friends.db"), null);
-                                cursor = db.query("friends", new String[]{"uin"}, "name ='" + encodeSendername + "'", null, null, null, null);
+                                if (getSharedPreferences("groups", MODE_PRIVATE).contains("sync_friends"))
+                                    cursor = db.query("friends", new String[]{"uin"}, "name ='" + encodeSendername + "'", null, null, null, null);
+                                else
+                                    break out;
                             } else if (getSharedPreferences("groups", MODE_PRIVATE).contains(title)) {
                                 db = SQLiteDatabase.openOrCreateDatabase(this.getDatabasePath("friends.db"), null);
                                 Cursor cursorTemp = db.query("'" + title + "'", new String[]{"uin"}, "name ='" + encodeSendername + "'", null, null, null, null);
@@ -108,35 +111,41 @@ public class FCMReceiver extends FirebaseMessagingService {
                                     cursorTemp.close();
                                     cursor = db.query("friends", new String[]{"uin"}, "name ='" + encodeSendername + "'", null, null, null, null);
                                 } else cursor = cursorTemp;
-                                groupNumber = getSharedPreferences("groupsNumber", MODE_PRIVATE).getString(title, null);
-                            } else {
-                                groupNumber = getSharedPreferences("groupsNumber", MODE_PRIVATE).getString(title, null);
-                                largeIcon = downloadIcon("https://p.qlogo.cn/gh/" + groupNumber + "/" + groupNumber + "/100", title);
+                            } else
                                 break out;
-                            }
                             if (cursor.getCount() != 0) {
                                 if (cursor.moveToFirst()) {
                                     String QQnumber = cursor.getString(0);
                                     cursor.close();
                                     db.close();
-                                    Bitmap bitmap = downloadIcon("https://q4.qlogo.cn/g?b=qq&s=140&nk=" + QQnumber, encodeSendername);
-                                    if (groupNumber == null)
-                                        largeIcon = bitmap;
-                                    else
-                                        largeIcon = downloadIcon("https://p.qlogo.cn/gh/" + groupNumber + "/" + groupNumber + "/100", title);
+                                    downloadIcon("https://q4.qlogo.cn/g?b=qq&s=140&nk=" + QQnumber, encodeSendername);
                                 }
                             } else {
                                 cursor.close();
                                 db.close();
                                 break out;
                             }
-                        } else {
-                            largeIcon = BitmapFactory.decodeFile(this.getCacheDir().getPath() + "/" + encodeSendername);
                         }
                         icon = IconCompat.createWithBitmap(BitmapFactory.decodeFile(this.getCacheDir().getPath() + "/" + encodeSendername));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+                    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.P)
+                        if (isfriend) {
+                            if (icon != null)
+                                largeIcon = BitmapFactory.decodeFile(this.getCacheDir().getPath() + "/" + encodeSendername);
+                        } else if (new File(this.getCacheDir().getPath() + "/" + title).exists())
+                            largeIcon = BitmapFactory.decodeFile(this.getCacheDir().getPath() + "/" + title);
+                        else {
+                            String groupNumber = getSharedPreferences("groupsNumber", MODE_PRIVATE).getString(title, null);
+                            if (groupNumber != null) {
+                                try {
+                                    largeIcon = downloadIcon("https://p.qlogo.cn/gh/" + groupNumber + "/" + groupNumber + "/100", title);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
                 }
                 setSummary(packageName, AppName, intent);
                 MessagingStyle(packageName, AppName, title, senderName, body, intent, id, icon, largeIcon);
@@ -288,7 +297,7 @@ public class FCMReceiver extends FirebaseMessagingService {
                 .setColor(color)
                 .setContentTitle(packageName)
                 .setStyle(style);
-        if (largeIcon != null)
+        if (largeIcon != null && android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.P)
             notification.setLargeIcon(largeIcon);
         notification.setGroup(packageName)
                 .setContentIntent(intent)
