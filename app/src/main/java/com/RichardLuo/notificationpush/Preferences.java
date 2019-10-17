@@ -16,6 +16,7 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.text.Html;
 import android.text.TextUtils;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -70,8 +71,8 @@ public class Preferences extends PreferenceFragmentCompat {
                     }
                 });
 
-        start = (SwitchPreference) findPreference("start");
-        start.setOnPreferenceClickListener(new SwitchPreference.OnPreferenceClickListener() {
+        start = findPreference("start");
+        Objects.requireNonNull(start).setOnPreferenceClickListener(new SwitchPreference.OnPreferenceClickListener() {
             @Override
             public boolean onPreferenceClick(Preference preference) {
                 Intent intent = new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS");
@@ -86,10 +87,45 @@ public class Preferences extends PreferenceFragmentCompat {
             }
         });
 
-        input = (EditTextPreference) findPreference("input");
+        input = findPreference("input");
 
-        hide = (SwitchPreference) findPreference("hide");
-        hide.setOnPreferenceClickListener(new SwitchPreference.OnPreferenceClickListener() {
+        Preference logcat = findPreference("logcat");
+        Objects.requireNonNull(logcat).setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+                AlertDialog.Builder log = new AlertDialog.Builder(Objects.requireNonNull(getContext()));
+                log.setTitle("Log");
+                ByteArrayOutputStream result = new ByteArrayOutputStream();
+                try {
+                    InputStream is = Runtime.getRuntime().exec(new String[]{"logcat", "-d", "*:E"}).getInputStream();
+                    byte[] buffer = new byte[1024];
+                    int length;
+                    while ((length = is.read(buffer)) != -1) {
+                        result.write(buffer, 0, length);
+                    }
+                } catch (IOException e) {
+                    Log.e("error:", "read fail");
+                    Objects.requireNonNull(getActivity()).runOnUiThread(new Runnable() {
+                        public void run() {
+                            Toast.makeText(getActivity(), "读取失败", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+                log.setPositiveButton("复制", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        ((ClipboardManager) Objects.requireNonNull(getActivity()).getSystemService(Context.CLIPBOARD_SERVICE)).setPrimaryClip(ClipData.newPlainText("token", token));
+                        Toast.makeText(getActivity(), "复制成功", Toast.LENGTH_SHORT).show();
+                    }
+                });
+                log.setMessage(result.toString());
+                log.show();
+                return true;
+            }
+        });
+
+        hide = findPreference("hide");
+        Objects.requireNonNull(hide).setOnPreferenceClickListener(new SwitchPreference.OnPreferenceClickListener() {
             @Override
             public boolean onPreferenceClick(Preference preference) {
                 Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
@@ -100,7 +136,7 @@ public class Preferences extends PreferenceFragmentCompat {
         });
 
         Preference tokenPreference = findPreference("token");
-        tokenPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+        Objects.requireNonNull(tokenPreference).setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             @Override
             public boolean onPreferenceClick(Preference preference) {
                 final AlertDialog.Builder normalDialog = new AlertDialog.Builder(Objects.requireNonNull(getContext()));
@@ -124,7 +160,7 @@ public class Preferences extends PreferenceFragmentCompat {
         });
 
         Preference LoginPreference = findPreference("Login");
-        LoginPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+        Objects.requireNonNull(LoginPreference).setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             @Override
             public boolean onPreferenceClick(Preference preference) {
                 startActivityForResult(new Intent(getContext(), QQLogin.class), 200);
@@ -134,7 +170,7 @@ public class Preferences extends PreferenceFragmentCompat {
         });
 
         Preference clear = findPreference("clear");
-        clear.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+        Objects.requireNonNull(clear).setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             @Override
             public boolean onPreferenceClick(Preference preference) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -215,7 +251,7 @@ public class Preferences extends PreferenceFragmentCompat {
                                                 JSONArray friends = friendslist.getJSONObject(String.valueOf(i)).getJSONArray("mems");
                                                 for (int j = 0; j < friends.length(); j++) {
                                                     JSONObject friend = friends.getJSONObject(j);
-                                                    db.execSQL("INSERT INTO friends VALUES (?, ?)", new Object[]{String.valueOf(friend.getInt("uin")), Html.fromHtml(friend.getString("name").replace("&nbsp;", "%20").replace("/", "%2f")).toString()});
+                                                    db.execSQL("INSERT INTO friends VALUES (?, ?)", new Object[]{friend.getString("uin"), Html.fromHtml(friend.getString("name").replace("&nbsp;", "%20").replace("/", "%2f")).toString()});
                                                 }
                                             }
                                         }
@@ -262,7 +298,7 @@ public class Preferences extends PreferenceFragmentCompat {
                                             final String[] groupNames = new String[groupsList.length()];
                                             for (int i = 0; i < groupsList.length(); i++) {
                                                 JSONObject group = groupsList.getJSONObject(i);
-                                                String groupName = Html.fromHtml(group.getString("gn")).toString();
+                                                String groupName = Html.fromHtml(group.getString("gn").replace("&amp;", "&").replace("&nbsp;", " ")).toString();
                                                 groupNames[i] = groupName;
                                                 Objects.requireNonNull(getActivity()).getSharedPreferences("groupsNumber", MODE_PRIVATE).edit().putString(groupName, group.getString("gc")).apply();
                                             }
@@ -295,12 +331,6 @@ public class Preferences extends PreferenceFragmentCompat {
                                                                 new Thread() {
                                                                     @Override
                                                                     public void run() {
-                                                                        boolean isSyncfriends = false;
-                                                                        if (getActivity().getSharedPreferences("groups", MODE_PRIVATE).contains("sync_friends"))
-                                                                            isSyncfriends = true;
-                                                                        getActivity().getSharedPreferences("groups", MODE_PRIVATE).edit().clear().apply();
-                                                                        if (isSyncfriends)
-                                                                            getActivity().getSharedPreferences("groups", MODE_PRIVATE).edit().putBoolean("sync_friends", true).apply();
                                                                         for (final Integer choice : choices) {
                                                                             if (getActivity() != null)
                                                                                 getActivity().runOnUiThread(new Runnable() {
@@ -338,7 +368,7 @@ public class Preferences extends PreferenceFragmentCompat {
                                                                                         for (int j = 0; j < temp; j++) {
                                                                                             JSONObject member = members.getJSONObject(j);
                                                                                             String card = member.getString("card");
-                                                                                            db.execSQL("INSERT INTO '" + name + "' VALUES (?, ?)", new Object[]{String.valueOf(member.getInt("uin")), Html.fromHtml((card.equals("") ? member.getString("nick") : card).replace("&nbsp;", "%20").replace("/", "%2f")).toString()});
+                                                                                            db.execSQL("INSERT INTO '" + name + "' VALUES (?, ?)", new Object[]{member.getString("uin"), Html.fromHtml((card.equals("") ? member.getString("nick") : card).replace("&nbsp;", "%20").replace("/", "%2f")).toString()});
                                                                                         }
                                                                                     }
                                                                                     getMember.disconnect();

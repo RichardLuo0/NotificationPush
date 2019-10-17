@@ -35,6 +35,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static android.app.NotificationManager.IMPORTANCE_DEFAULT;
 import static android.app.PendingIntent.FLAG_UPDATE_CURRENT;
@@ -60,7 +61,7 @@ public class FCMReceiver extends FirebaseMessagingService {
         String body = data.get("body");
         String packageName = data.get("package");
         String AppName = data.get("name");
-        int id = Integer.valueOf(data.get("id"));
+        int id = Integer.valueOf(Objects.requireNonNull(data.get("id")));
         String senderName = null;
         if (data.containsKey("senderName"))
             senderName = data.get("senderName");
@@ -71,7 +72,7 @@ public class FCMReceiver extends FirebaseMessagingService {
 
         setChannel(AppName);
 
-        switch (packageName) {
+        switch (Objects.requireNonNull(packageName)) {
             case "com.tencent.minihd.qq":
             case "com.tencent.mobileqqi":
             case "com.tencent.qqlite":
@@ -155,7 +156,7 @@ public class FCMReceiver extends FirebaseMessagingService {
                 setSummary(packageName, AppName, intent);
         }
 
-        Notification notification = new NotificationCompat.Builder(this, AppName)
+        Notification notification = new NotificationCompat.Builder(this, Objects.requireNonNull(AppName))
                 .setSmallIcon(R.drawable.ic_notification)
                 .setColor(color)
                 .setStyle(new NotificationCompat.BigTextStyle()
@@ -170,12 +171,13 @@ public class FCMReceiver extends FirebaseMessagingService {
         notificationManagerCompat.notify(packageName, id, notification);
     }
 
+    @SuppressWarnings("SuspiciousNameCombination")
     private Bitmap downloadIcon(String url, String name) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         connection.setRequestMethod("GET");
         connection.setDoInput(true);
-        connection.setConnectTimeout(1000);
-        connection.setReadTimeout(1000);
+        connection.setConnectTimeout(2000);
+        connection.setReadTimeout(2000);
         connection.connect();
         if (connection.getResponseCode() == 200 || connection.getResponseCode() == 304) {
             InputStream inputStream = connection.getInputStream();
@@ -223,6 +225,7 @@ public class FCMReceiver extends FirebaseMessagingService {
         }
     }
 
+    @SuppressWarnings("ConstantConditions")
     private PendingIntent getIntent(String packageName) {
         PendingIntent intent = null;
         if (Package_Intent.containsKey(packageName)) {
@@ -282,7 +285,7 @@ public class FCMReceiver extends FirebaseMessagingService {
         NotificationCompat.MessagingStyle style;
         if (!((current = getCurrentNotification(packageName, ID)) == null)) {
             style = NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(current);
-            style.addMessage(message, new Date().getTime(), sender);
+            Objects.requireNonNull(style).addMessage(message, new Date().getTime(), sender);
         } else {
             style = new NotificationCompat.MessagingStyle(sender);
             if (title.equals(senderName))

@@ -7,6 +7,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,7 +29,9 @@ public class Application extends AppCompatActivity {
     ListView listView;
     SharedPreferences preferences;
     ProgressBar progressBar;
+    Runnable update;
     Handler handler = new Handler();
+    boolean filterSystemApp = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,12 +45,13 @@ public class Application extends AppCompatActivity {
         final PackageManager packageManager = getPackageManager();
         final List<ApplicationInfo> packageInfo = packageManager.getInstalledApplications(0);
 
-        new Thread() {
+        update = new Runnable() {
             @Override
             public void run() {
-                super.run();
                 final List<info> packageView = new ArrayList<>();
                 for (final ApplicationInfo applicationInfo : packageInfo) {
+                    if (filterSystemApp && !((applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0))
+                        continue;
                     final String name = packageManager.getApplicationLabel(applicationInfo).toString();
                     Spinner.OnItemSelectedListener onItemSelectedListener = new Spinner.OnItemSelectedListener() {
                         @Override
@@ -131,13 +135,27 @@ public class Application extends AppCompatActivity {
                     this.selection = selection;
                 }
             }
-        }.start();
+        };
+        new Thread(update).start();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.appmenu, menu);
+        return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == android.R.id.home)
-            finish();
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                finish();
+                break;
+            case R.id.filter:
+                filterSystemApp = !filterSystemApp;
+                new Thread(update).start();
+                break;
+        }
         return true;
     }
 }

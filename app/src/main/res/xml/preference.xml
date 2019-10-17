@@ -24,7 +24,10 @@
                 android:targetClass="com.RichardLuo.notificationpush.Application"
                 android:targetPackage="com.RichardLuo.notificationpush" />
         </Preference>
-
+        <Preference
+            android:key="logcat"
+            android:summary="@string/logcat"
+            android:title="@string/logcat" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/client">

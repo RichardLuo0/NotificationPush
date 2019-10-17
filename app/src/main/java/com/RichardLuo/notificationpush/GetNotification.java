@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.os.StrictMode;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
+import android.util.Log;
 
 import org.json.JSONObject;
 
@@ -94,40 +95,6 @@ public class GetNotification extends NotificationListenerService {
                                 ID = StringToA(title);
                             } else
                                 return;
-                    /*if (body.contains("联系人给你") || body.contains("你收到了")) {
-                        QQcount = true;
-                        String tickerText;
-                        if (oneNotification.tickerText != null)
-                            tickerText = oneNotification.tickerText.toString().replace("\n", "");
-                        else
-                            return;
-                        Matcher matcher = Pattern.compile("^(.*?)\\((((?![()]).)*?)\\):(.*?)$").matcher(tickerText);
-                        if (matcher.find()) {
-                            senderName = matcher.group(1);
-                            title = matcher.group(2);
-                            body = matcher.group(4).trim();
-                        } else {
-                            String[] single = tickerText.split(":", 2);
-                            senderName = single[0];
-                            title = single[0];
-                            body = single[1];
-                        }
-                    } else {
-                        if (QQcount) {
-                            QQcount = false;
-                            return;
-                        }
-                        QQcount = false;
-                        title = title.split("\\s\\(", 2)[0];
-                        String[] bodySplit = body.split(":\\s", 2);
-                        if (bodySplit.length == 1 || body.split("\\s", 2)[0].equals(""))
-                            senderName = title;
-                        else {
-                            senderName = bodySplit[0];
-                            body = bodySplit[1];
-                        }
-                    }
-                    ID = StringToA(title);*/
                         }
                 }
 
@@ -164,7 +131,7 @@ public class GetNotification extends NotificationListenerService {
                     connection.getResponseCode();
                     connection.disconnect();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    Log.e("error:", "Can't send " + packageName + " " + title);
                 }
                 super.run();
             }

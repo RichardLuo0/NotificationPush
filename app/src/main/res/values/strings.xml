@@ -31,9 +31,11 @@
 
     <string name="colors">Change Color</string>
     <string name="about">About</string>
-    <string name="HowToUse">此应用可以通过fcm通道从一台手机向另一台手机转发通知\n如果token显示fail，请检查Google框架并尝试翻墙重启应用\n你只需要将token(就是那堆乱码)复制到服务端的输入框，点击开始转发即可开始推送\n注意设置优先级指发送的优先级\n要开启头像显示需至少先同步一次数据库\n服务端必须24小时翻墙\n--by Adama</string>
+    <string name="HowToUse">此应用可以通过fcm通道从一台手机向另一台手机转发通知\n如果token显示fail，请检查Google框架并尝试翻墙重启应用\n你只需要将token(就是那堆乱码)复制到服务端的输入框，点击开始转发即可开始推送\n注意设置优先级指发送的优先级\n要开启头像显示需至少先同步一次数据库\n服务端必须24小时翻墙\n—by Adama</string>
     <string name="title_activity_application">Application</string>
     <string name="title_QQ_Login">QQ Login</string>
     <string name="clear_cookies">Clear cookies</string>
     <string name="refresh">Refresh</string>
+    <string name="logcat">Logcat</string>
+    <string name="filter">exclude system app</string>
 </resources>
