@@ -45,10 +45,12 @@ public class FCMReceiver extends FirebaseMessagingService {
     static Map<String, PendingIntent> Package_Intent = new HashMap<>();
 
     int color = 0;
+    Boolean ringForEach;
     NotificationManagerCompat notificationManagerCompat;
 
     @Override
     public void onCreate() {
+        ringForEach = getSharedPreferences("MainActivity", MODE_PRIVATE).getBoolean("ringForEach", false);
         notificationManagerCompat = NotificationManagerCompat.from(this);
         super.onCreate();
     }
@@ -166,7 +168,7 @@ public class FCMReceiver extends FirebaseMessagingService {
                 .setGroup(packageName)
                 .setContentIntent(intent)
                 .setAutoCancel(true)
-                .setOnlyAlertOnce(true)
+                .setOnlyAlertOnce(!ringForEach)
                 .build();
         notificationManagerCompat.notify(packageName, id, notification);
     }
@@ -206,7 +208,7 @@ public class FCMReceiver extends FirebaseMessagingService {
             return false;
         }
         List<ApplicationInfo> applicationInfo = getPackageManager().getInstalledApplications(0);
-        if (applicationInfo == null || applicationInfo.isEmpty())
+        if (applicationInfo.isEmpty())
             return false;
         for (ApplicationInfo info : applicationInfo) {
             if (packageName.equals(info.packageName) && info.enabled) {
@@ -220,12 +222,11 @@ public class FCMReceiver extends FirebaseMessagingService {
         NotificationChannel mChannel;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !getSharedPreferences("Channels", MODE_PRIVATE).contains(AppName)) {
             mChannel = new NotificationChannel(AppName, AppName, IMPORTANCE_DEFAULT);
-            getSystemService(NotificationManager.class).createNotificationChannel(mChannel);
+            Objects.requireNonNull(getSystemService(NotificationManager.class)).createNotificationChannel(mChannel);
             getSharedPreferences("Channels", MODE_PRIVATE).edit().putBoolean(AppName, true).apply();
         }
     }
 
-    @SuppressWarnings("ConstantConditions")
     private PendingIntent getIntent(String packageName) {
         PendingIntent intent = null;
         if (Package_Intent.containsKey(packageName)) {
@@ -246,7 +247,7 @@ public class FCMReceiver extends FirebaseMessagingService {
     private Notification getCurrentNotification(String packageName, int id) {
         StatusBarNotification[] sbns;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M)
-            sbns = getSystemService(NotificationManager.class).getActiveNotifications();
+            sbns = Objects.requireNonNull(getSystemService(NotificationManager.class)).getActiveNotifications();
         else
             return null;
         for (StatusBarNotification sbn : sbns) {
@@ -305,7 +306,7 @@ public class FCMReceiver extends FirebaseMessagingService {
         notification.setGroup(packageName)
                 .setContentIntent(intent)
                 .setAutoCancel(true)
-                .setOnlyAlertOnce(true);
+                .setOnlyAlertOnce(!ringForEach);
         notificationManagerCompat.notify(packageName, ID, notification.build());
     }
 }

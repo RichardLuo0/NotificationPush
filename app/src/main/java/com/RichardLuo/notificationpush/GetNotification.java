@@ -1,6 +1,8 @@
 package com.RichardLuo.notificationpush;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.StrictMode;
@@ -8,14 +10,18 @@ import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
 
+import androidx.core.app.NotificationCompat;
+
 import org.json.JSONObject;
 
 import java.io.DataOutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static android.app.NotificationManager.IMPORTANCE_DEFAULT;
 import static android.preference.PreferenceManager.getDefaultSharedPreferences;
 
 public class GetNotification extends NotificationListenerService {
@@ -29,6 +35,28 @@ public class GetNotification extends NotificationListenerService {
         inputID = getDefaultSharedPreferences(this).getString("input", "");
         pm = getPackageManager();
         StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().permitAll().build());
+        if (getDefaultSharedPreferences(getApplicationContext()).getBoolean("startForeground", false)) {
+            NotificationChannel mChannel;
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                mChannel = new NotificationChannel("Foreground", "前台服务", IMPORTANCE_DEFAULT);
+                Objects.requireNonNull(getSystemService(NotificationManager.class)).createNotificationChannel(mChannel);
+            }
+            Notification foregroundNotice = new NotificationCompat.Builder(this, "Foreground")
+                    .setSmallIcon(R.drawable.ic_notification)
+                    .setColor(getResources().getColor(getSharedPreferences("MainActivity", MODE_PRIVATE).getInt("color", R.color.teal)))
+                    .setContentTitle("后台转发通知中")
+                    .setContentText("转发中")
+                    .build();
+            startForeground(1, foregroundNotice);
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        if (getDefaultSharedPreferences(getApplicationContext()).getBoolean("startForeground", false)) {
+            stopForeground(true);
+        }
+        super.onDestroy();
     }
 
     @Override
@@ -58,7 +86,8 @@ public class GetNotification extends NotificationListenerService {
                 if (getDefaultSharedPreferences(getApplicationContext()).getBoolean("hide_no_content", false) && title.equals("无标题") && body.equals("无内容"))
                     return;
 
-                switch (getSharedPreferences("Application", MODE_PRIVATE).getInt(packageName, 0)) {
+                SharedPreferences appPreference = getSharedPreferences("Application", MODE_PRIVATE);
+                switch (appPreference.getInt(packageName, appPreference.contains("allOff") ? 2 : 0)) {
                     case 0:
                         priority = "normal";
                         break;
@@ -85,16 +114,17 @@ public class GetNotification extends NotificationListenerService {
                                 if (matcher.find()) {
                                     senderName = matcher.group(1);
                                     title = matcher.group(2);
-                                    body = matcher.group(4).trim();
+                                    body = Objects.requireNonNull(matcher.group(4)).trim();
                                 } else {
                                     String[] single = tickerText.split(":", 2);
                                     senderName = single[0];
                                     title = single[0];
-                                    body = single[1].trim();
+                                    if (single.length > 1)
+                                        body = single[1].trim();
                                 }
-                                ID = StringToA(title);
-                            } else
-                                return;
+                                if (title != null)
+                                    ID = StringToA(title);
+                            }
                         }
                 }
 

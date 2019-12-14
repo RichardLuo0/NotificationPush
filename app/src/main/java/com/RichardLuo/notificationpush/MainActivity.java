@@ -13,6 +13,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -24,7 +26,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         preferences = getPreferences(MODE_PRIVATE);
-        setTheme(preferences.getInt("style", R.style.base_AppTheme_teal));
+        setTheme(preferences.getInt("style", R.style.base_DayNight_AppTheme_teal));
         setContentView(R.layout.activity_main);
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.preference, new Preferences())
@@ -57,38 +59,38 @@ public class MainActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case R.id.color:
                 final String[] items = {"水鸭青", "姨妈红", "哔哩粉", "基佬紫", "很深蓝", "非常黄", "真的灰"};
-                AlertDialog.Builder listDialog = new AlertDialog.Builder(this);
+                AlertDialog.Builder listDialog = new MaterialAlertDialogBuilder(this);
                 listDialog.setTitle("选择颜色");
                 listDialog.setItems(items, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int click) {
                         switch (click) {
                             case 0:
-                                preferences.edit().putInt("style", R.style.base_AppTheme_teal).apply();
+                                preferences.edit().putInt("style", R.style.base_DayNight_AppTheme_teal).apply();
                                 preferences.edit().putInt("color", R.color.teal).apply();
                                 break;
                             case 1:
-                                preferences.edit().putInt("style", R.style.base_AppTheme_red).apply();
+                                preferences.edit().putInt("style", R.style.base_DayNight_AppTheme_red).apply();
                                 preferences.edit().putInt("color", R.color.red).apply();
                                 break;
                             case 2:
-                                preferences.edit().putInt("style", R.style.base_AppTheme_pink).apply();
+                                preferences.edit().putInt("style", R.style.base_DayNight_AppTheme_pink).apply();
                                 preferences.edit().putInt("color", R.color.pink).apply();
                                 break;
                             case 3:
-                                preferences.edit().putInt("style", R.style.base_AppTheme_purple).apply();
+                                preferences.edit().putInt("style", R.style.base_DayNight_AppTheme_purple).apply();
                                 preferences.edit().putInt("color", R.color.purple).apply();
                                 break;
                             case 4:
-                                preferences.edit().putInt("style", R.style.base_AppTheme_blue).apply();
+                                preferences.edit().putInt("style", R.style.base_DayNight_AppTheme_blue).apply();
                                 preferences.edit().putInt("color", R.color.blue).apply();
                                 break;
                             case 5:
-                                preferences.edit().putInt("style", R.style.base_AppTheme_yellow).apply();
+                                preferences.edit().putInt("style", R.style.base_DayNight_AppTheme_yellow).apply();
                                 preferences.edit().putInt("color", R.color.yellow).apply();
                                 break;
                             case 6:
-                                preferences.edit().putInt("style", R.style.base_AppTheme_grey).apply();
+                                preferences.edit().putInt("style", R.style.base_DayNight_AppTheme_grey).apply();
                                 preferences.edit().putInt("color", R.color.grey).apply();
                                 break;
                         }
@@ -98,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
                 listDialog.show();
                 break;
             case R.id.about:
-                final AlertDialog.Builder normalDialog = new AlertDialog.Builder(this);
+                final AlertDialog.Builder normalDialog = new MaterialAlertDialogBuilder(this);
                 normalDialog.setTitle("关于");
                 normalDialog.setMessage(getResources().getString(R.string.HowToUse));
                 normalDialog.setPositiveButton("捐赠", new DialogInterface.OnClickListener() {

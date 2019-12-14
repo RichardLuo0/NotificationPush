@@ -1,5 +1,6 @@
 package com.RichardLuo.notificationpush;
 
+import android.animation.ValueAnimator;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.ProgressDialog;
@@ -17,10 +18,17 @@ import android.provider.Settings;
 import android.text.Html;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.preference.CheckBoxPreference;
 import androidx.preference.EditTextPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
@@ -28,6 +36,7 @@ import androidx.preference.SwitchPreference;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
 
@@ -58,18 +67,6 @@ public class Preferences extends PreferenceFragmentCompat {
     public void onCreatePreferences(Bundle bundle, String s) {
         setPreferencesFromResource(R.xml.preference, null);
         preferences = getDefaultSharedPreferences(Objects.requireNonNull(getActivity()));
-        FirebaseInstanceId.getInstance().getInstanceId()
-                .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<InstanceIdResult> task) {
-                        if (!task.isSuccessful()) {
-                            token = "fail";
-                            Toast.makeText(getActivity(), "获取token失败", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                        token = Objects.requireNonNull(task.getResult()).getToken();
-                    }
-                });
 
         start = findPreference("start");
         Objects.requireNonNull(start).setOnPreferenceClickListener(new SwitchPreference.OnPreferenceClickListener() {
@@ -87,15 +84,25 @@ public class Preferences extends PreferenceFragmentCompat {
             }
         });
 
+        CheckBoxPreference startForeground = findPreference("startForeground");
+        Objects.requireNonNull(startForeground).setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+                if (start.isChecked())
+                    Toast.makeText(getActivity(), "请重启通知监听", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+        });
+
         input = findPreference("input");
 
         Preference logcat = findPreference("logcat");
         Objects.requireNonNull(logcat).setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             @Override
             public boolean onPreferenceClick(Preference preference) {
-                AlertDialog.Builder log = new AlertDialog.Builder(Objects.requireNonNull(getContext()));
+                AlertDialog.Builder log = new MaterialAlertDialogBuilder(Objects.requireNonNull(getContext()));
                 log.setTitle("Log");
-                ByteArrayOutputStream result = new ByteArrayOutputStream();
+                final ByteArrayOutputStream result = new ByteArrayOutputStream();
                 try {
                     InputStream is = Runtime.getRuntime().exec(new String[]{"logcat", "-d", "*:E"}).getInputStream();
                     byte[] buffer = new byte[1024];
@@ -114,7 +121,7 @@ public class Preferences extends PreferenceFragmentCompat {
                 log.setPositiveButton("复制", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        ((ClipboardManager) Objects.requireNonNull(getActivity()).getSystemService(Context.CLIPBOARD_SERVICE)).setPrimaryClip(ClipData.newPlainText("token", token));
+                        ((ClipboardManager) Objects.requireNonNull(Objects.requireNonNull(getActivity()).getSystemService(Context.CLIPBOARD_SERVICE))).setPrimaryClip(ClipData.newPlainText("token", result.toString()));
                         Toast.makeText(getActivity(), "复制成功", Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -139,13 +146,13 @@ public class Preferences extends PreferenceFragmentCompat {
         Objects.requireNonNull(tokenPreference).setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             @Override
             public boolean onPreferenceClick(Preference preference) {
-                final AlertDialog.Builder normalDialog = new AlertDialog.Builder(Objects.requireNonNull(getContext()));
+                final AlertDialog.Builder normalDialog = new MaterialAlertDialogBuilder(Objects.requireNonNull(getContext()));
                 normalDialog.setTitle("Token");
                 normalDialog.setMessage(token);
                 normalDialog.setPositiveButton("复制", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        ((ClipboardManager) Objects.requireNonNull(getActivity()).getSystemService(Context.CLIPBOARD_SERVICE)).setPrimaryClip(ClipData.newPlainText("token", token));
+                        ((ClipboardManager) Objects.requireNonNull(Objects.requireNonNull(getActivity()).getSystemService(Context.CLIPBOARD_SERVICE))).setPrimaryClip(ClipData.newPlainText("token", token));
                         Toast.makeText(getActivity(), "复制成功", Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -175,7 +182,7 @@ public class Preferences extends PreferenceFragmentCompat {
             public boolean onPreferenceClick(Preference preference) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     final NotificationManager notificationManager = Objects.requireNonNull(getContext()).getSystemService(NotificationManager.class);
-                    for (NotificationChannel channel : notificationManager.getNotificationChannels()) {
+                    for (NotificationChannel channel : Objects.requireNonNull(notificationManager).getNotificationChannels()) {
                         notificationManager.deleteNotificationChannel(channel.getId());
                     }
                 }
@@ -184,6 +191,57 @@ public class Preferences extends PreferenceFragmentCompat {
                 return true;
             }
         });
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        FirebaseInstanceId.getInstance().getInstanceId()
+                .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<InstanceIdResult> task) {
+                        if (!task.isSuccessful()) {
+                            token = "fail";
+                            if (getActivity() != null)
+                                Toast.makeText(getActivity(), "获取token失败", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        token = Objects.requireNonNull(task.getResult()).getToken();
+                    }
+                });
+
+        getListView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+        getListView().setFitsSystemWindows(true);
+//
+//        final ActionBar actionBar = Objects.requireNonNull(((AppCompatActivity) Objects.requireNonNull(getActivity())).getSupportActionBar());
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//            getListView().setOnScrollChangeListener(new View.OnScrollChangeListener() {
+//                boolean lastScrollinTop = true;
+//                ValueAnimator animation = ValueAnimator.ofInt(0, 8);
+//
+//                {
+//                    animation.setDuration(400);
+//                    animation.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+//                        @Override
+//                        public void onAnimationUpdate(ValueAnimator animation) {
+//                            actionBar.setElevation((int) animation.getAnimatedValue());
+//                        }
+//                    });
+//                }
+//
+//                @Override
+//                public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
+//                    if (!v.canScrollVertically(-1) && !lastScrollinTop) {
+//                        animation.reverse();
+//                        lastScrollinTop = true;
+//                    } else if (lastScrollinTop) {
+//                        animation.start();
+//                        lastScrollinTop = false;
+//                    }
+//                }
+//            });
+//        } else
+//            actionBar.setElevation(8);
     }
 
     @Override
@@ -222,7 +280,7 @@ public class Preferences extends PreferenceFragmentCompat {
             final long bkn = GetBkn(skey);
             final SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(Objects.requireNonNull(getContext()).getDatabasePath("friends.db"), null);
 
-            AlertDialog.Builder listDialog = new AlertDialog.Builder(Objects.requireNonNull(getActivity()));
+            AlertDialog.Builder listDialog = new MaterialAlertDialogBuilder(Objects.requireNonNull(getActivity()));
             listDialog.setTitle("你需要同步");
             listDialog.setItems(new String[]{"好友", "群组"}, new DialogInterface.OnClickListener() {
                 @Override
@@ -306,7 +364,7 @@ public class Preferences extends PreferenceFragmentCompat {
                                                 getActivity().runOnUiThread(new Runnable() {
                                                     public void run() {
                                                         final ArrayList<Integer> choices = new ArrayList<>();
-                                                        AlertDialog.Builder ChoiceDialog = new AlertDialog.Builder(getActivity());
+                                                        AlertDialog.Builder ChoiceDialog = new MaterialAlertDialogBuilder(getActivity());
                                                         ChoiceDialog.setTitle("选择要同步的群组");
                                                         ChoiceDialog.setMultiChoiceItems(groupNames, null, new DialogInterface.OnMultiChoiceClickListener() {
                                                             @Override

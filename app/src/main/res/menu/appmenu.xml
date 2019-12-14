@@ -2,9 +2,21 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/search"
+        android:icon="@drawable/ic_search"
+        android:title="@string/search"
+        app:actionViewClass="androidx.appcompat.widget.SearchView"
+        app:iconTint="@color/black"
+        app:showAsAction="collapseActionView|ifRoom" />
+    <item
+        android:id="@+id/reverse"
+        android:icon="@drawable/ic_reverse"
+        android:title="@string/reverse"
+        app:iconTint="@color/black" />
+    <item
         android:id="@+id/filter"
         android:icon="@drawable/ic_filter"
         android:title="@string/filter"
-        app:iconTint="?android:textColorPrimary"
+        app:iconTint="@color/black"
         app:showAsAction="ifRoom" />
 </menu>

@@ -10,4 +10,6 @@
 
     <color name="colorPrimaryDark">#EAEAEA</color>
     <color name="black">#000000</color>
+
+    <color name="actionBarColor">#ccffffff</color>
 </resources>

@@ -7,4 +7,9 @@
     <color name="blue">#7986cb</color>
     <color name="yellow">#ffd54f</color>
     <color name="grey">#90a4ae</color>
+
+    <color name="colorPrimaryDark">#000000</color>
+    <color name="black">#ffffff</color>
+
+    <color name="actionBarColor">#cc000000</color>
 </resources>

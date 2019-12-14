@@ -38,4 +38,11 @@
     <string name="refresh">Refresh</string>
     <string name="logcat">Logcat</string>
     <string name="filter">exclude system app</string>
+    <string name="startForeground">Start Foreground service</string>
+    <string name="summary_startForeground">To keep alive</string>
+    <string name="reverse">close all Notification</string>
+    <string name="ringForEach">Alert every time</string>
+    <string name="summary_ringForEach">Alert for every notice</string>
+    <string name="search">search</string>
+    <string name="positive">reset to normal</string>
 </resources>

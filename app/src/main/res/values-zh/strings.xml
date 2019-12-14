@@ -39,4 +39,11 @@
     <string name="refresh">刷新</string>
     <string name="logcat">Logcat</string>
     <string name="filter">过滤系统app</string>
+    <string name="startForeground">以前台服务形式启动</string>
+    <string name="summary_startForeground">增大服务存活率</string>
+    <string name="reverse">关闭全部应用通知</string>
+    <string name="ringForEach">开启全部提示音</string>
+    <string name="summary_ringForEach">每一条通知都将会有提示音</string>
+    <string name="search">搜索</string>
+    <string name="positive">重置为正常优先级</string>
 </resources>

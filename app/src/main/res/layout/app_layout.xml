@@ -6,31 +6,45 @@
     android:background="?android:attr/selectableItemBackground"
     android:clickable="true"
     android:focusable="true"
-    android:orientation="horizontal"
-    android:paddingTop="20dp"
-    android:paddingBottom="20dp">
+    android:orientation="horizontal">
 
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="25dp"
-        android:layout_height="25dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginEnd="10dp"
-        tools:srcCompat="@tools:sample/avatars" />
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_margin="10dp"
+        tools:srcCompat="@tools:sample/avatars"
+        tools:ignore="ContentDescription" />
 
     <TextView
         android:id="@+id/appName"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:layout_weight="1"
+        android:gravity="center_vertical"
         android:text="@string/priority"
-        android:textSize="18sp" />
+        android:textColor="@color/black"
+        android:textSize="14sp"
+        tools:ignore="InefficientWeight" />
 
-    <Spinner
-        android:id="@+id/spinner"
-        android:layout_width="wrap_content"
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.ExposedDropdownMenu"
+        android:layout_width="150dp"
         android:layout_height="wrap_content"
-        android:layout_gravity="end"
-        android:entries="@array/priorityContent" />
+        android:layout_gravity="center"
+        android:layout_marginEnd="10dp">
+
+        <androidx.appcompat.widget.AppCompatAutoCompleteTextView
+            android:id="@+id/priority"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:cursorVisible="false"
+            android:focusableInTouchMode="false"
+            android:inputType="none"
+            android:paddingTop="0dp"
+            android:paddingBottom="0dp"
+            android:soundEffectsEnabled="false" />
+
+    </com.google.android.material.textfield.TextInputLayout>
 
 </LinearLayout>

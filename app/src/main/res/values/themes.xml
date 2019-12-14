@@ -1,60 +1,64 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="base" parent="Theme.AppCompat.DayNight">
+    <style name="base" parent="Theme.MaterialComponents.DayNight">
         <item name="android:colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="android:windowLightStatusBar" tools:targetApi="23">true</item>
-        <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
-        <item name="android:navigationBarColor" tools:targetApi="27">@color/colorPrimaryDark</item>
-        <item name="actionBarTheme">@style/actionBarTheme</item>
-        <item name="alertDialogTheme">@style/AlertDialog</item>
+        <item name="colorPrimary">?android:attr/color</item>
+        <item name="colorPrimaryVariant">?android:attr/color</item>
+        <item name="colorOnPrimary">?android:attr/color</item>
+        <item name="colorSecondary">?android:attr/color</item>
+        <item name="colorSecondaryVariant">?android:attr/color</item>
+        <item name="colorOnSecondary">?android:attr/color</item>
+        <item name="android:statusBarColor">@color/actionBarColor</item>
+        <item name="android:navigationBarColor" tools:targetApi="27">@android:color/transparent
+        </item>
+        <item name="actionBarStyle">@style/actionBar</item>
         <item name="android:colorControlNormal">?android:attr/colorAccent</item>
         <item name="android:colorControlActivated">?android:attr/colorAccent</item>
         <item name="android:colorEdgeEffect">?android:attr/colorAccent</item>
-        <item name="android:textViewStyle">@style/actionBarTheme</item>
+        <item name="android:windowActionBarOverlay">true</item>
     </style>
 
-    <style name="actionBarTheme">
-        <item name="android:textColorPrimary">?android:attr/colorAccent</item>
-        <item name="android:textColor">@color/black</item>
+    <style name="base.DayNight">
+        <item name="android:windowLightStatusBar" tools:targetApi="23">true</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
     </style>
 
-    <style name="AlertDialog" parent="@style/Theme.AppCompat.Light.Dialog.Alert">
-        <item name="android:colorAccent">?android:attr/color</item>
-        <item name="colorAccent">?android:attr/color</item>
+    <style name="actionBar" parent="Widget.MaterialComponents.ActionBar.Surface">
+        <item name="background">@color/actionBarColor</item>
     </style>
 
     <!-- Base application theme. -->
-    <style name="base.AppTheme_teal">
+    <style name="base.DayNight.AppTheme_teal">
         <item name="android:color">@color/teal</item>
         <item name="android:colorAccent">@color/teal</item>
     </style>
 
-    <style name="base.AppTheme_red">
+    <style name="base.DayNight.AppTheme_red">
         <item name="android:color">@color/red</item>
         <item name="android:colorAccent">@color/red</item>
     </style>
 
-    <style name="base.AppTheme_pink">
+    <style name="base.DayNight.AppTheme_pink">
         <item name="android:color">@color/pink</item>
         <item name="android:colorAccent">@color/pink</item>
     </style>
 
-    <style name="base.AppTheme_purple">
+    <style name="base.DayNight.AppTheme_purple">
         <item name="android:color">@color/purple</item>
         <item name="android:colorAccent">@color/purple</item>
     </style>
 
-    <style name="base.AppTheme_blue">
+    <style name="base.DayNight.AppTheme_blue">
         <item name="android:color">@color/blue</item>
         <item name="android:colorAccent">@color/blue</item>
     </style>
 
-    <style name="base.AppTheme_yellow">
+    <style name="base.DayNight.AppTheme_yellow">
         <item name="android:color">@color/yellow</item>
         <item name="android:colorAccent">@color/yellow</item>
     </style>
 
-    <style name="base.AppTheme_grey">
+    <style name="base.DayNight.AppTheme_grey">
         <item name="android:color">@color/grey</item>
         <item name="android:colorAccent">@color/grey</item>
     </style>

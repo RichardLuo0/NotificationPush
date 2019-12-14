@@ -7,6 +7,11 @@
             android:title="@string/start" />
         <CheckBoxPreference
             android:defaultValue="false"
+            android:key="startForeground"
+            android:summary="@string/summary_startForeground"
+            android:title="@string/startForeground" />
+        <CheckBoxPreference
+            android:defaultValue="false"
             android:key="hide_no_content"
             android:summary="@string/summary_hide_no_content"
             android:title="@string/hide_no_content" />
@@ -43,6 +48,11 @@
             android:key="clear"
             android:summary="@string/summary_clear"
             android:title="@string/clear" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ringForEach"
+            android:summary="@string/summary_ringForEach"
+            android:title="@string/ringForEach" />
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="sendQQ"
