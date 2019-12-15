@@ -50,13 +50,13 @@ public class FCMReceiver extends FirebaseMessagingService {
 
     @Override
     public void onCreate() {
-        ringForEach = getSharedPreferences("MainActivity", MODE_PRIVATE).getBoolean("ringForEach", false);
         notificationManagerCompat = NotificationManagerCompat.from(this);
         super.onCreate();
     }
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
+        ringForEach = getDefaultSharedPreferences(this).getBoolean("ringForEach", false);
         color = getResources().getColor(getSharedPreferences("MainActivity", MODE_PRIVATE).getInt("color", R.color.teal));
         Map<String, String> data = remoteMessage.getData();
         String title = data.get("title");
