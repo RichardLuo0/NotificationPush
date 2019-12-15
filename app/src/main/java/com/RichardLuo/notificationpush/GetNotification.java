@@ -124,7 +124,8 @@ public class GetNotification extends NotificationListenerService {
                                 }
                                 if (title != null)
                                     ID = StringToA(title);
-                            }
+                            } else
+                                return;
                         }
                 }
 
