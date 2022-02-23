@@ -1,6 +1,5 @@
 package com.RichardLuo.notificationpush;
 
-import android.animation.ValueAnimator;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
@@ -8,14 +7,12 @@ import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -25,7 +22,6 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatAutoCompleteTextView;
 import androidx.appcompat.widget.SearchView;
@@ -55,7 +51,7 @@ public class Application extends AppCompatActivity {
     List<ApplicationInfo> tempItem;
     Info[] displayInfo;
 
-    class ViewHolder {
+    static class ViewHolder {
         TextView text;
         ImageView icon;
         AppCompatAutoCompleteTextView act;
@@ -72,16 +68,13 @@ public class Application extends AppCompatActivity {
             icon = getPackageManager().getApplicationIcon(applicationInfo);
             selection = preferences.getInt(applicationInfo.packageName, preferences.contains("allOff") ? 2 : 0);
 
-            onItemClickListener = new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    if (position == 0 && !preferences.contains("allOff")) {
-                        preferences.edit().remove(applicationInfo.packageName).apply();
-                        return;
-                    } else if (position == 2 && preferences.contains("allOff"))
-                        return;
-                    preferences.edit().putInt(applicationInfo.packageName, position).apply();
-                }
+            onItemClickListener = (parent, view, position, id) -> {
+                if (position == 0 && !preferences.contains("allOff")) {
+                    preferences.edit().remove(applicationInfo.packageName).apply();
+                    return;
+                } else if (position == 2 && preferences.contains("allOff"))
+                    return;
+                preferences.edit().putInt(applicationInfo.packageName, position).apply();
             };
         }
     }
@@ -128,80 +121,74 @@ public class Application extends AppCompatActivity {
 ////        } else
 ////            actionBar.setElevation(8);
 
-        final String[] priorityContent = getApplicationContext().getResources().getStringArray(R.array.priorityContent);
-        final ArrayAdapter actAdapter = new ArrayAdapter<>(getApplicationContext(), R.layout.dropdown, priorityContent);
-        packageManager = getPackageManager();
-        packageInfo = packageManager.getInstalledApplications(0);
         new Thread() {
             @Override
             public void run() {
+                final String[] priorityContent = getApplicationContext().getResources().getStringArray(R.array.priorityContent);
+                final ArrayAdapter<?> actAdapter = new ArrayAdapter<>(getApplicationContext(), R.layout.dropdown, priorityContent);
+                packageManager = getPackageManager();
+                packageInfo = packageManager.getInstalledApplications(0);
                 Collections.sort(packageInfo, new ApplicationInfo.DisplayNameComparator(packageManager));
-                super.run();
+                displayInfo = new Info[packageInfo.size()];
+
+                ba = new BaseAdapter() {
+                    private int lastPosition = -1;
+
+                    @Override
+                    public int getCount() {
+                        return displayItem.size();
+                    }
+
+                    @Override
+                    public Object getItem(int position) {
+                        return displayItem.get(position);
+                    }
+
+                    @Override
+                    public long getItemId(int position) {
+                        return position;
+                    }
+
+                    @Override
+                    public void notifyDataSetChanged() {
+                        displayInfo = new Info[packageInfo.size()];
+                        lastPosition = -1;
+                        super.notifyDataSetChanged();
+                    }
+
+                    @Override
+                    public View getView(int position, View convertView, ViewGroup parent) {
+                        ViewHolder holder;
+                        Info info;
+                        if (displayInfo[position] == null)
+                            displayInfo[position] = (info = new Info(displayItem.get(position)));
+                        else
+                            info = displayInfo[position];
+                        if (convertView == null) {
+                            convertView = LayoutInflater.from(getBaseContext()).inflate(R.layout.app_layout, listView, false);
+                            holder = new ViewHolder();
+                            holder.text = convertView.findViewById(R.id.appName);
+                            holder.icon = convertView.findViewById(R.id.imageView);
+                            holder.act = convertView.findViewById(R.id.priority);
+                            holder.act.setAdapter(actAdapter);
+                            holder.act.setKeyListener(null);
+                            convertView.setTag(holder);
+                        } else {
+                            holder = (ViewHolder) convertView.getTag();
+                        }
+                        holder.text.setText(info.text);
+                        holder.icon.setImageDrawable(info.icon);
+                        holder.act.setOnItemClickListener(info.onItemClickListener);
+                        holder.act.setText(priorityContent[info.selection], false);
+                        convertView.startAnimation(AnimationUtils.loadAnimation(getApplicationContext(), (position > lastPosition) ? R.anim.up_from_bottom : R.anim.down_from_top));
+                        lastPosition = position;
+                        return convertView;
+                    }
+                };
+
+                runOnUiThread(() -> refreshListData(() -> listView.setAdapter(ba)));
             }
         }.start();
-        displayInfo = new Info[packageInfo.size()];
-
-        ba = new BaseAdapter() {
-            private int lastPosition = -1;
-
-            @Override
-            public int getCount() {
-                return displayItem.size();
-            }
-
-            @Override
-            public Object getItem(int position) {
-                return displayItem.get(position);
-            }
-
-            @Override
-            public long getItemId(int position) {
-                return position;
-            }
-
-            @Override
-            public void notifyDataSetChanged() {
-                displayInfo = new Info[packageInfo.size()];
-                lastPosition = -1;
-                super.notifyDataSetChanged();
-            }
-
-            @Override
-            public View getView(int position, View convertView, ViewGroup parent) {
-                ViewHolder holder;
-                Info info;
-                if (displayInfo[position] == null)
-                    displayInfo[position] = (info = new Info(displayItem.get(position)));
-                else
-                    info = displayInfo[position];
-                if (convertView == null) {
-                    convertView = LayoutInflater.from(getBaseContext()).inflate(R.layout.app_layout, listView, false);
-                    holder = new ViewHolder();
-                    holder.text = convertView.findViewById(R.id.appName);
-                    holder.icon = convertView.findViewById(R.id.imageView);
-                    holder.act = convertView.findViewById(R.id.priority);
-                    holder.act.setAdapter(actAdapter);
-                    holder.act.setKeyListener(null);
-                    convertView.setTag(holder);
-                } else {
-                    holder = (ViewHolder) convertView.getTag();
-                }
-                holder.text.setText(info.text);
-                holder.icon.setImageDrawable(info.icon);
-                holder.act.setOnItemClickListener(info.onItemClickListener);
-                holder.act.setText(priorityContent[info.selection], false);
-                convertView.startAnimation(AnimationUtils.loadAnimation(getApplicationContext(), (position > lastPosition) ? R.anim.up_from_bottom : R.anim.down_from_top));
-                lastPosition = position;
-                return convertView;
-            }
-        };
-
-        refreshListData(new Runnable() {
-            @Override
-            public void run() {
-                listView.setAdapter(ba);
-            }
-        });
     }
 
     public void refreshListData(final Runnable update) {
@@ -229,12 +216,9 @@ public class Application extends AppCompatActivity {
                     displayItem = packageInfo;
                 }
 
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        update.run();
-                        progressBar.setVisibility(View.GONE);
-                    }
+                runOnUiThread(() -> {
+                    update.run();
+                    progressBar.setVisibility(View.GONE);
                 });
                 super.run();
             }

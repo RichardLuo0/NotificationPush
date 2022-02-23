@@ -8,8 +8,8 @@ public class ForegroundMonitor extends AccessibilityService {
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            if (event.getPackageName() == null)
+        if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && event.getContentChangeTypes() == 0) {
+            if (event.getPackageName() == null || event.getPackageName().toString().contains("inputmethod") || event.getPackageName().toString().contains("system"))
                 return;
             packageName = event.getPackageName().toString();
         }

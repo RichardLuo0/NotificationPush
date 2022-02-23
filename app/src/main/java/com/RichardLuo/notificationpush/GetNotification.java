@@ -11,6 +11,7 @@ import android.service.notification.StatusBarNotification;
 import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 
 import org.json.JSONObject;
 
@@ -22,11 +23,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static android.app.NotificationManager.IMPORTANCE_DEFAULT;
-import static android.preference.PreferenceManager.getDefaultSharedPreferences;
+import static androidx.preference.PreferenceManager.getDefaultSharedPreferences;
 
 public class GetNotification extends NotificationListenerService {
-    protected final String Authorization = "";
-    protected final String Sender = "";
+    protected final String Authorization = BuildConfig.FCM_AUTHORIZATION;
+    protected final String Sender = BuildConfig.FCM_SENDER;
     public String inputID;
     PackageManager pm;
 
@@ -43,7 +44,7 @@ public class GetNotification extends NotificationListenerService {
             }
             Notification foregroundNotice = new NotificationCompat.Builder(this, "Foreground")
                     .setSmallIcon(R.drawable.ic_notification)
-                    .setColor(getResources().getColor(getSharedPreferences("MainActivity", MODE_PRIVATE).getInt("color", R.color.teal)))
+                    .setColor(ContextCompat.getColor(this, getSharedPreferences("MainActivity", MODE_PRIVATE).getInt("color", R.color.teal)))
                     .setContentTitle("后台转发通知中")
                     .setContentText("转发中")
                     .build();
@@ -174,8 +175,7 @@ public class GetNotification extends NotificationListenerService {
         int max = content.length();
         for (int i = 0; i < max; i++) {
             char c = content.charAt(i);
-            int b = (int) c;
-            result = result + b;
+            result = result + (int) c;
         }
         return result;
     }

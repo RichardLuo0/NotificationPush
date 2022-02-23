@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.RichardLuo.notificationpush">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission
+        android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
 
     <application
         android:allowBackup="false"
@@ -13,7 +17,9 @@
         android:supportsRtl="true"
         android:theme="@style/base.DayNight.AppTheme_teal">
 
-        <activity android:name=".MainActivity">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <action android:name="android.intent.action.VIEW" />
@@ -24,6 +30,7 @@
 
         <activity
             android:name=".Application"
+            android:exported="false"
             android:label="@string/title_activity_application"
             android:launchMode="singleTop"
             android:parentActivityName=".MainActivity">
@@ -40,6 +47,7 @@
 
         <activity
             android:name=".QQLogin"
+            android:exported="false"
             android:label="@string/title_QQ_Login"
             android:parentActivityName=".MainActivity">
             <meta-data
@@ -49,6 +57,7 @@
 
         <service
             android:name=".GetNotification"
+            android:exported="false"
             android:label="@string/service_name"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
@@ -66,6 +75,7 @@
 
         <service
             android:name=".ForegroundMonitor"
+            android:exported="false"
             android:label="@string/access_name"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>

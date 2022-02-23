@@ -1,10 +1,14 @@
 package com.RichardLuo.notificationpush;
 
+import static android.app.NotificationManager.IMPORTANCE_DEFAULT;
+import static android.app.PendingIntent.FLAG_UPDATE_CURRENT;
+import static androidx.preference.PreferenceManager.getDefaultSharedPreferences;
+
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.pm.ApplicationInfo;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
@@ -16,10 +20,13 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.os.Build;
 import android.service.notification.StatusBarNotification;
+import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.app.Person;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.IconCompat;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
@@ -31,15 +38,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import static android.app.NotificationManager.IMPORTANCE_DEFAULT;
-import static android.app.PendingIntent.FLAG_UPDATE_CURRENT;
-import static android.preference.PreferenceManager.getDefaultSharedPreferences;
 
 public class FCMReceiver extends FirebaseMessagingService {
     static Map<String, PendingIntent> Package_Intent = new HashMap<>();
@@ -55,15 +59,33 @@ public class FCMReceiver extends FirebaseMessagingService {
     }
 
     @Override
+    public void onNewToken(@NonNull String s) {
+        super.onNewToken(s);
+        String channelName = "Token变更";
+        setChannel(channelName);
+        Notification notification = new NotificationCompat.Builder(this, channelName)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setColor(color)
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .setSummaryText(channelName))
+                .setContentTitle(channelName)
+                .setContentText("Token发生变更，请更换服务端token")
+                .setAutoCancel(true)
+                .setOnlyAlertOnce(!ringForEach)
+                .build();
+        notificationManagerCompat.notify(channelName, 0, notification);
+    }
+
+    @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
         ringForEach = getDefaultSharedPreferences(this).getBoolean("ringForEach", false);
-        color = getResources().getColor(getSharedPreferences("MainActivity", MODE_PRIVATE).getInt("color", R.color.teal));
+        color = ContextCompat.getColor(this, getSharedPreferences("MainActivity", MODE_PRIVATE).getInt("color", R.color.teal));
         Map<String, String> data = remoteMessage.getData();
         String title = data.get("title");
         String body = data.get("body");
         String packageName = data.get("package");
         String AppName = data.get("name");
-        int id = Integer.valueOf(Objects.requireNonNull(data.get("id")));
+        int id = Integer.parseInt(Objects.requireNonNull(data.get("id")));
         String senderName = null;
         if (data.containsKey("senderName"))
             senderName = data.get("senderName");
@@ -94,7 +116,7 @@ public class FCMReceiver extends FirebaseMessagingService {
                 Bitmap largeIcon = null;
                 if (getDefaultSharedPreferences(this).getBoolean("sendQQ", false) && this.getDatabasePath("friends.db").exists()) {
                     boolean isfriend = senderName.equals(title);
-                    String encodeSendername = senderName.replace(" ", "%20").replace("/", "%2f");
+                    String encodeSendername = md5(senderName);
                     File file = new File(this.getCacheDir().getPath() + "/" + encodeSendername);
                     out:
                     try {
@@ -104,15 +126,15 @@ public class FCMReceiver extends FirebaseMessagingService {
                             if (isfriend) {
                                 db = SQLiteDatabase.openOrCreateDatabase(this.getDatabasePath("friends.db"), null);
                                 if (getSharedPreferences("groups", MODE_PRIVATE).contains("sync_friends"))
-                                    cursor = db.query("friends", new String[]{"uin"}, "name ='" + encodeSendername + "'", null, null, null, null);
+                                    cursor = db.query("friends", new String[]{"uin"}, "name ='" + senderName + "'", null, null, null, null);
                                 else
                                     break out;
                             } else if (getSharedPreferences("groups", MODE_PRIVATE).contains(title)) {
                                 db = SQLiteDatabase.openOrCreateDatabase(this.getDatabasePath("friends.db"), null);
-                                Cursor cursorTemp = db.query("'" + title + "'", new String[]{"uin"}, "name ='" + encodeSendername + "'", null, null, null, null);
+                                Cursor cursorTemp = db.query("'" + title + "'", new String[]{"uin"}, "name ='" + senderName + "'", null, null, null, null);
                                 if (cursorTemp.getCount() == 0) {
                                     cursorTemp.close();
-                                    cursor = db.query("friends", new String[]{"uin"}, "name ='" + encodeSendername + "'", null, null, null, null);
+                                    cursor = db.query("friends", new String[]{"uin"}, "name ='" + senderName + "'", null, null, null, null);
                                 } else cursor = cursorTemp;
                             } else
                                 break out;
@@ -131,7 +153,7 @@ public class FCMReceiver extends FirebaseMessagingService {
                         }
                         icon = IconCompat.createWithBitmap(BitmapFactory.decodeFile(this.getCacheDir().getPath() + "/" + encodeSendername));
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        Log.e("", e.getMessage(), e);
                     }
                     if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.P)
                         if (isfriend) {
@@ -145,7 +167,7 @@ public class FCMReceiver extends FirebaseMessagingService {
                                 try {
                                     largeIcon = downloadIcon("https://p.qlogo.cn/gh/" + groupNumber + "/" + groupNumber + "/100", title);
                                 } catch (IOException e) {
-                                    e.printStackTrace();
+                                    Log.e(Const.TAG, e.getMessage(), e);
                                 }
                             }
                         }
@@ -158,7 +180,7 @@ public class FCMReceiver extends FirebaseMessagingService {
                 setSummary(packageName, AppName, intent);
         }
 
-        Notification notification = new NotificationCompat.Builder(this, Objects.requireNonNull(AppName))
+        Notification notification = new NotificationCompat.Builder(this, AppName == null ? "" : AppName)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setColor(color)
                 .setStyle(new NotificationCompat.BigTextStyle()
@@ -171,6 +193,28 @@ public class FCMReceiver extends FirebaseMessagingService {
                 .setOnlyAlertOnce(!ringForEach)
                 .build();
         notificationManagerCompat.notify(packageName, id, notification);
+    }
+
+    public static String md5(final String s) {
+        final String MD5 = "MD5";
+        try {
+            MessageDigest digest = java.security.MessageDigest
+                    .getInstance(MD5);
+            digest.update(s.getBytes());
+            byte[] messageDigest = digest.digest();
+
+            StringBuilder hexString = new StringBuilder();
+            for (byte aMessageDigest : messageDigest) {
+                StringBuilder h = new StringBuilder(Integer.toHexString(0xFF & aMessageDigest));
+                while (h.length() < 2)
+                    h.insert(0, "0");
+                hexString.append(h);
+            }
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException e) {
+            Log.e(Const.TAG, e.getMessage(), e);
+        }
+        return "unknown";
     }
 
     @SuppressWarnings("SuspiciousNameCombination")
@@ -203,21 +247,6 @@ public class FCMReceiver extends FirebaseMessagingService {
         return null;
     }
 
-    private boolean isAppInstalled(String packageName) {
-        if (packageName == null || packageName.isEmpty()) {
-            return false;
-        }
-        List<ApplicationInfo> applicationInfo = getPackageManager().getInstalledApplications(0);
-        if (applicationInfo.isEmpty())
-            return false;
-        for (ApplicationInfo info : applicationInfo) {
-            if (packageName.equals(info.packageName) && info.enabled) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public void setChannel(String AppName) {
         NotificationChannel mChannel;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !getSharedPreferences("Channels", MODE_PRIVATE).contains(AppName)) {
@@ -233,9 +262,17 @@ public class FCMReceiver extends FirebaseMessagingService {
             intent = Package_Intent.get(packageName);
             return intent;
         }
-        if (packageName != null && !packageName.contains("android") && packageName.split("\\.", 2)[0].equals("com") && isAppInstalled(packageName))
+        if (packageName != null && !packageName.contains("android"))
             try {
-                intent = PendingIntent.getActivity(this, 200, getPackageManager().getLaunchIntentForPackage(packageName), FLAG_UPDATE_CURRENT);
+                Intent launchIntent = getPackageManager().getLaunchIntentForPackage(packageName);
+                if (launchIntent == null)
+                    return null;
+                int flags;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+                    flags = PendingIntent.FLAG_IMMUTABLE | FLAG_UPDATE_CURRENT;
+                else
+                    flags = FLAG_UPDATE_CURRENT;
+                intent = PendingIntent.getActivity(this, 200, launchIntent, flags);
             } catch (Exception e) {
                 Package_Intent.put(packageName, null);
                 return null;
@@ -283,18 +320,17 @@ public class FCMReceiver extends FirebaseMessagingService {
         Person sender = personBuilder.build();
 
         Notification current;
-        NotificationCompat.MessagingStyle style;
-        if (!((current = getCurrentNotification(packageName, ID)) == null)) {
+        NotificationCompat.MessagingStyle style = null;
+        if (!((current = getCurrentNotification(packageName, ID)) == null))
             style = NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(current);
-            Objects.requireNonNull(style).addMessage(message, new Date().getTime(), sender);
-        } else {
+        if (style == null) {
             style = new NotificationCompat.MessagingStyle(sender);
             if (title.equals(senderName))
                 style.setGroupConversation(false);
             else
                 style.setConversationTitle(title).setGroupConversation(true);
-            style.addMessage(message, new Date().getTime(), sender);
         }
+        style.addMessage(message, new Date().getTime(), sender);
 
         NotificationCompat.Builder notification = new NotificationCompat.Builder(this, AppName)
                 .setSmallIcon(R.drawable.ic_notification)
