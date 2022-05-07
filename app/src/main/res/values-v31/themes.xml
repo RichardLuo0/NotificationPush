@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="base.DayNight.AppTheme_android12plus">
+        <item name="android:color">@color/android12plus</item>
+        <item name="android:colorAccent">@color/android12plus</item>
+    </style>
+</resources>

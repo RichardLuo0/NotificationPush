@@ -23,7 +23,7 @@ public class QQLogin extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setTheme(getSharedPreferences("MainActivity", MODE_PRIVATE).getInt("style", R.style.base_DayNight_AppTheme_teal));
+        setTheme(ThemeProvider.getCurrentStyle(this));
         setContentView(R.layout.qq_login);
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
 

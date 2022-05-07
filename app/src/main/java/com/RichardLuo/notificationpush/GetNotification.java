@@ -1,5 +1,8 @@
 package com.RichardLuo.notificationpush;
 
+import static android.app.NotificationManager.IMPORTANCE_DEFAULT;
+import static androidx.preference.PreferenceManager.getDefaultSharedPreferences;
+
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -11,7 +14,6 @@ import android.service.notification.StatusBarNotification;
 import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
-import androidx.core.content.ContextCompat;
 
 import org.json.JSONObject;
 
@@ -21,9 +23,6 @@ import java.net.URL;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static android.app.NotificationManager.IMPORTANCE_DEFAULT;
-import static androidx.preference.PreferenceManager.getDefaultSharedPreferences;
 
 public class GetNotification extends NotificationListenerService {
     protected final String Authorization = BuildConfig.FCM_AUTHORIZATION;
@@ -44,7 +43,7 @@ public class GetNotification extends NotificationListenerService {
             }
             Notification foregroundNotice = new NotificationCompat.Builder(this, "Foreground")
                     .setSmallIcon(R.drawable.ic_notification)
-                    .setColor(ContextCompat.getColor(this, getSharedPreferences("MainActivity", MODE_PRIVATE).getInt("color", R.color.teal)))
+                    .setColor(ThemeProvider.getCurrentColor(this))
                     .setContentTitle("后台转发通知中")
                     .setContentText("转发中")
                     .build();

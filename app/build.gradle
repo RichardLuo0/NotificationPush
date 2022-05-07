@@ -10,8 +10,8 @@ android {
         applicationId "com.RichardLuo.notificationpush"
         minSdkVersion 21
         targetSdkVersion 31
-        versionCode 29
-        versionName "1.1.5"
+        versionCode 30
+        versionName "1.1.6"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField "String", "FCM_AUTHORIZATION", localProperties['FCM_AUTHORIZATION']
         buildConfigField "String", "FCM_SENDER", localProperties['FCM_SENDER']

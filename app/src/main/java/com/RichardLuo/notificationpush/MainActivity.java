@@ -1,9 +1,7 @@
 package com.RichardLuo.notificationpush;
 
-import android.content.DialogInterface;
+import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.content.pm.ApplicationInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
@@ -15,37 +13,16 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
-import java.util.List;
-
 public class MainActivity extends AppCompatActivity {
-    private static SharedPreferences preferences;
-
-    private final static String[] QQNames = new String[]{"com.tencent.mobileqq", "com.tencent.tim", "com.tencent.mobileqqi", "com.tencent.qqlite", "com.tencent.minihd.qq"};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        preferences = getPreferences(MODE_PRIVATE);
-        setTheme(preferences.getInt("style", R.style.base_DayNight_AppTheme_teal));
+        setTheme(ThemeProvider.getCurrentStyle(this));
         setContentView(R.layout.activity_main);
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.preference, new Preferences())
                 .commit();
-
-        List<ApplicationInfo> packageInfo = this.getPackageManager().getInstalledApplications(0);
-        String installedQQ = preferences.getString("installedQQ", "");
-        String current = null;
-        for (ApplicationInfo info : packageInfo) {
-            if (info.packageName.equals(installedQQ)) break;
-            for (String QQName : QQNames) {
-                if (QQName.equals(info.packageName) && info.enabled) {
-                    current = info.packageName;
-                    preferences.edit().putString("installedQQ", current).apply();
-                    break;
-                }
-            }
-            if (current != null) break;
-        }
     }
 
     @Override
@@ -54,48 +31,18 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+    @SuppressLint("NonConstantResourceId")
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.color:
-                final String[] items = {"水鸭青", "姨妈红", "哔哩粉", "基佬紫", "很深蓝", "非常黄", "真的灰"};
                 AlertDialog.Builder listDialog = new MaterialAlertDialogBuilder(this);
                 listDialog.setTitle("选择颜色");
-                listDialog.setItems(items, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int click) {
-                        switch (click) {
-                            case 0:
-                                preferences.edit().putInt("style", R.style.base_DayNight_AppTheme_teal).apply();
-                                preferences.edit().putInt("color", R.color.teal).apply();
-                                break;
-                            case 1:
-                                preferences.edit().putInt("style", R.style.base_DayNight_AppTheme_red).apply();
-                                preferences.edit().putInt("color", R.color.red).apply();
-                                break;
-                            case 2:
-                                preferences.edit().putInt("style", R.style.base_DayNight_AppTheme_pink).apply();
-                                preferences.edit().putInt("color", R.color.pink).apply();
-                                break;
-                            case 3:
-                                preferences.edit().putInt("style", R.style.base_DayNight_AppTheme_purple).apply();
-                                preferences.edit().putInt("color", R.color.purple).apply();
-                                break;
-                            case 4:
-                                preferences.edit().putInt("style", R.style.base_DayNight_AppTheme_blue).apply();
-                                preferences.edit().putInt("color", R.color.blue).apply();
-                                break;
-                            case 5:
-                                preferences.edit().putInt("style", R.style.base_DayNight_AppTheme_yellow).apply();
-                                preferences.edit().putInt("color", R.color.yellow).apply();
-                                break;
-                            case 6:
-                                preferences.edit().putInt("style", R.style.base_DayNight_AppTheme_grey).apply();
-                                preferences.edit().putInt("color", R.color.grey).apply();
-                                break;
-                        }
-                        Toast.makeText(getApplicationContext(), "必须重启应用", Toast.LENGTH_SHORT).show();
-                    }
+                listDialog.setSingleChoiceItems(ThemeProvider.getThemeNameList(), ThemeProvider.getCurrentTheme(this), (dialog, click) -> {
+                    ThemeProvider.setTheme(this, click);
+                    Intent intent = new Intent(this, MainActivity.class);
+                    startActivity(intent);
+                    finish();
                 });
                 listDialog.show();
                 break;
@@ -103,22 +50,14 @@ public class MainActivity extends AppCompatActivity {
                 final AlertDialog.Builder normalDialog = new MaterialAlertDialogBuilder(this);
                 normalDialog.setTitle("关于");
                 normalDialog.setMessage(getResources().getString(R.string.HowToUse));
-                normalDialog.setPositiveButton("捐赠", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        try {
-                            startActivity(new Intent().setData(Uri.parse("alipays://platformapi/startapp?saId=10000007&clientVersion=3.7.0.0718&qrcode=https://qr.alipay.com/fkx0746746ugqrzxkrle7c0?_s=web-other")).setAction("android.intent.action.VIEW"));
-                        } catch (Exception e) {
-                            Toast.makeText(getApplicationContext(), "Alipay not found!", Toast.LENGTH_SHORT).show();
-                        }
+                normalDialog.setPositiveButton("捐赠", (dialog, which) -> {
+                    try {
+                        startActivity(new Intent().setData(Uri.parse("alipays://platformapi/startapp?saId=10000007&clientVersion=3.7.0.0718&qrcode=https://qr.alipay.com/fkx0746746ugqrzxkrle7c0?_s=web-other")).setAction("android.intent.action.VIEW"));
+                    } catch (Exception e) {
+                        Toast.makeText(getApplicationContext(), "Alipay not found!", Toast.LENGTH_SHORT).show();
                     }
                 });
-                normalDialog.setNeutralButton("GITHUB", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        startActivity(new Intent().setData(Uri.parse("https://github.com/CJieLuo/NotificationPush")).setAction("android.intent.action.VIEW"));
-                    }
-                });
+                normalDialog.setNeutralButton("GITHUB", (dialog, which) -> startActivity(new Intent().setData(Uri.parse("https://github.com/CJieLuo/NotificationPush")).setAction("android.intent.action.VIEW")));
                 normalDialog.show();
                 break;
         }

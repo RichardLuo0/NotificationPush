@@ -10,7 +10,6 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.sqlite.SQLiteDatabase;
@@ -271,7 +270,7 @@ public class Preferences extends PreferenceFragmentCompat {
 
                                     requireActivity().runOnUiThread(new Runnable() {
                                         public void run() {
-                                            getActivity().getSharedPreferences("groups", MODE_PRIVATE).edit().putBoolean("sync_friends", true).apply();
+                                            requireActivity().getSharedPreferences("groups", MODE_PRIVATE).edit().putBoolean("sync_friends", true).apply();
                                             Toast.makeText(getContext(), "同步成功", Toast.LENGTH_SHORT).show();
                                         }
                                     });
@@ -309,126 +308,117 @@ public class Preferences extends PreferenceFragmentCompat {
                                         String manageList = allList.getJSONArray("manage").toString().substring(1);
                                         final JSONArray groupsList = new JSONArray(joinList + manageList);
                                         final String[] groupNames = new String[groupsList.length()];
+                                        SharedPreferences.Editor editor = requireActivity().getSharedPreferences("groupsNumber", MODE_PRIVATE).edit();
                                         for (int i = 0; i < groupsList.length(); i++) {
                                             JSONObject group = groupsList.getJSONObject(i);
                                             String groupName = Html.fromHtml(group.getString("gn").replace("&amp;", "&").replace("&nbsp;", " ")).toString();
                                             groupNames[i] = groupName;
-                                            requireActivity().getSharedPreferences("groupsNumber", MODE_PRIVATE).edit().putString(groupName, group.getString("gc")).apply();
+                                            editor.putString(groupName, group.getString("gc"));
                                         }
+                                        editor.apply();
                                         if (getActivity() != null)
-                                            getActivity().runOnUiThread(new Runnable() {
-                                                public void run() {
-                                                    final ArrayList<Integer> choices = new ArrayList<>();
-                                                    AlertDialog.Builder ChoiceDialog = new MaterialAlertDialogBuilder(getActivity());
-                                                    ChoiceDialog.setTitle("选择要同步的群组");
-                                                    ChoiceDialog.setMultiChoiceItems(groupNames, null, new DialogInterface.OnMultiChoiceClickListener() {
+                                            getActivity().runOnUiThread(() -> {
+                                                final ArrayList<Integer> choices = new ArrayList<>();
+                                                AlertDialog.Builder ChoiceDialog = new MaterialAlertDialogBuilder(getActivity());
+                                                ChoiceDialog.setTitle("选择要同步的群组");
+                                                ChoiceDialog.setMultiChoiceItems(groupNames, null, (dialog1, which, isChecked) -> {
+                                                    if (isChecked)
+                                                        choices.add(which);
+                                                    else
+                                                        choices.remove(Integer.valueOf(which));
+                                                });
+                                                ChoiceDialog.setPositiveButton("确定", (dialog12, which) -> {
+                                                    if (choices.isEmpty())
+                                                        return;
+                                                    final ProgressDialog waitingDialog = new ProgressDialog(getActivity());
+                                                    waitingDialog.setTitle("同步中");
+                                                    waitingDialog.setMessage(groupNames[choices.get(0)]);
+                                                    waitingDialog.setIndeterminate(true);
+                                                    waitingDialog.setCancelable(false);
+                                                    waitingDialog.show();
+                                                    new Thread() {
                                                         @Override
-                                                        public void onClick(DialogInterface dialog, int which, boolean isChecked) {
-                                                            if (isChecked)
-                                                                choices.add(which);
-                                                            else
-                                                                choices.remove(Integer.valueOf(which));
-                                                        }
-                                                    });
-                                                    ChoiceDialog.setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                                                        @Override
-                                                        public void onClick(DialogInterface dialog, int which) {
-                                                            if (choices.isEmpty())
-                                                                return;
-                                                            final ProgressDialog waitingDialog = new ProgressDialog(getActivity());
-                                                            waitingDialog.setTitle("同步中");
-                                                            waitingDialog.setMessage(groupNames[choices.get(0)]);
-                                                            waitingDialog.setIndeterminate(true);
-                                                            waitingDialog.setCancelable(false);
-                                                            waitingDialog.show();
-                                                            new Thread() {
-                                                                @Override
-                                                                public void run() {
-                                                                    for (final Integer choice : choices) {
-                                                                        if (getActivity() != null)
-                                                                            getActivity().runOnUiThread(new Runnable() {
-                                                                                public void run() {
-                                                                                    waitingDialog.setMessage(groupNames[choice]);
-                                                                                }
-                                                                            });
-                                                                        final String name = groupNames[choice];
-                                                                        try {
-                                                                            int temp = 41;
-                                                                            int last = 0;
-                                                                            db.execSQL("drop table if exists '" + name + "'");
-                                                                            db.execSQL("create table '" + name + "'(uin text primary key,name text)");
-                                                                            getActivity().getSharedPreferences("groups", MODE_PRIVATE).edit().putBoolean(name, true).apply();
-                                                                            while (temp >= 41) {
-                                                                                HttpURLConnection getMember = connect(new URL("https://qun.qq.com/cgi-bin/qun_mgr/search_group_members"), pskey, skey, uin, token);
-                                                                                DataOutputStream getMemberout = new DataOutputStream(getMember.getOutputStream());
-                                                                                getMemberout.writeBytes("st=" + last + "&end=" + (last + 40) + "&sort=0&bkn=" + bkn + "&gc=" + groupsList.getJSONObject(choice).getInt("gc"));
-                                                                                last += 41;
-                                                                                getMemberout.flush();
-                                                                                getMemberout.close();
-                                                                                getMember.connect();
-                                                                                if (getMember.getResponseCode() == 200) {
-                                                                                    String groupjson = parseResult(getMember.getInputStream());
-                                                                                    getMember.disconnect();
-                                                                                    JSONObject all = new JSONObject(groupjson);
-                                                                                    if (groupjson.length() < 40 || all.getString("em").contains("malicious"))
-                                                                                        throw new IllegalArgumentException();
-                                                                                    JSONArray members;
-                                                                                    if (all.has("mems"))
-                                                                                        members = all.getJSONArray("mems");
-                                                                                    else
-                                                                                        break;
-                                                                                    temp = members.length();
-                                                                                    for (int j = 0; j < temp; j++) {
-                                                                                        JSONObject member = members.getJSONObject(j);
-                                                                                        String card = member.getString("card");
-                                                                                        db.execSQL("INSERT INTO '" + name + "' VALUES (?, ?)", new Object[]{member.getString("uin"), URLDecoder.decode(Html.fromHtml(card.isEmpty() ? member.getString("nick") : card).toString(), "UTF-8")});
-                                                                                    }
-                                                                                }
-                                                                                getMember.disconnect();
-                                                                                sleep(400);
+                                                        public void run() {
+                                                            SharedPreferences.Editor editor = requireActivity().getSharedPreferences("groups", MODE_PRIVATE).edit();
+                                                            for (final Integer choice : choices) {
+                                                                requireActivity().runOnUiThread(() -> waitingDialog.setMessage(groupNames[choice]));
+                                                                final String name = groupNames[choice];
+                                                                try {
+                                                                    int temp = 41;
+                                                                    int last = 0;
+                                                                    db.execSQL("drop table if exists '" + name + "'");
+                                                                    db.execSQL("create table '" + name + "'(uin text primary key,name text)");
+                                                                    editor.putBoolean(name, true).apply();
+                                                                    while (temp >= 41) {
+                                                                        HttpURLConnection getMember = connect(new URL("https://qun.qq.com/cgi-bin/qun_mgr/search_group_members"), pskey, skey, uin, token);
+                                                                        DataOutputStream getMemberout = new DataOutputStream(getMember.getOutputStream());
+                                                                        getMemberout.writeBytes("st=" + last + "&end=" + (last + 40) + "&sort=0&bkn=" + bkn + "&gc=" + groupsList.getJSONObject(choice).getInt("gc"));
+                                                                        last += 41;
+                                                                        getMemberout.flush();
+                                                                        getMemberout.close();
+                                                                        getMember.connect();
+                                                                        if (getMember.getResponseCode() == 200) {
+                                                                            String groupjson = parseResult(getMember.getInputStream());
+                                                                            getMember.disconnect();
+                                                                            JSONObject all = new JSONObject(groupjson);
+                                                                            if (groupjson.length() < 40 || all.getString("em").contains("malicious"))
+                                                                                throw new IllegalArgumentException();
+                                                                            JSONArray members;
+                                                                            if (all.has("mems"))
+                                                                                members = all.getJSONArray("mems");
+                                                                            else
+                                                                                break;
+                                                                            temp = members.length();
+                                                                            for (int j = 0; j < temp; j++) {
+                                                                                JSONObject member = members.getJSONObject(j);
+                                                                                String card = member.getString("card");
+                                                                                db.execSQL("INSERT INTO '" + name + "' VALUES (?, ?)", new Object[]{member.getString("uin"), URLDecoder.decode(Html.fromHtml(card.isEmpty() ? member.getString("nick") : card).toString(), "UTF-8")});
                                                                             }
-                                                                            if (getActivity() != null)
-                                                                                getActivity().runOnUiThread(new Runnable() {
-                                                                                    public void run() {
-                                                                                        Toast.makeText(getContext(), name + "同步成功", Toast.LENGTH_SHORT).show();
-                                                                                    }
-                                                                                });
-                                                                        } catch (IllegalArgumentException e) {
-                                                                            Log.e(Const.TAG, e.getMessage(), e);
-                                                                            requireActivity().runOnUiThread(new Runnable() {
-                                                                                public void run() {
-                                                                                    Toast.makeText(getContext(), name + "被反恶意机制拦截", Toast.LENGTH_SHORT).show();
-                                                                                }
-                                                                            });
-                                                                        } catch (SocketTimeoutException e) {
-                                                                            Log.e(Const.TAG, e.getMessage(), e);
-                                                                            requireActivity().runOnUiThread(new Runnable() {
-                                                                                public void run() {
-                                                                                    Toast.makeText(getContext(), name + "网络超时", Toast.LENGTH_SHORT).show();
-                                                                                }
-                                                                            });
-                                                                        } catch (Exception e) {
-                                                                            Log.e(Const.TAG, e.getMessage(), e);
-                                                                            requireActivity().runOnUiThread(new Runnable() {
-                                                                                public void run() {
-                                                                                    Toast.makeText(getContext(), name + "解析错误", Toast.LENGTH_SHORT).show();
-                                                                                }
-                                                                            });
                                                                         }
-                                                                        try {
-                                                                            sleep(400);
-                                                                        } catch (InterruptedException e1) {
-                                                                            e1.printStackTrace();
-                                                                        }
+                                                                        getMember.disconnect();
+                                                                        sleep(400);
                                                                     }
-                                                                    waitingDialog.dismiss();
-                                                                    db.close();
+                                                                    if (getActivity() != null)
+                                                                        getActivity().runOnUiThread(new Runnable() {
+                                                                            public void run() {
+                                                                                Toast.makeText(getContext(), name + "同步成功", Toast.LENGTH_SHORT).show();
+                                                                            }
+                                                                        });
+                                                                } catch (IllegalArgumentException e) {
+                                                                    Log.e(Const.TAG, e.getMessage(), e);
+                                                                    requireActivity().runOnUiThread(new Runnable() {
+                                                                        public void run() {
+                                                                            Toast.makeText(getContext(), name + "被反恶意机制拦截", Toast.LENGTH_SHORT).show();
+                                                                        }
+                                                                    });
+                                                                } catch (SocketTimeoutException e) {
+                                                                    Log.e(Const.TAG, e.getMessage(), e);
+                                                                    requireActivity().runOnUiThread(new Runnable() {
+                                                                        public void run() {
+                                                                            Toast.makeText(getContext(), name + "网络超时", Toast.LENGTH_SHORT).show();
+                                                                        }
+                                                                    });
+                                                                } catch (Exception e) {
+                                                                    Log.e(Const.TAG, e.getMessage(), e);
+                                                                    requireActivity().runOnUiThread(new Runnable() {
+                                                                        public void run() {
+                                                                            Toast.makeText(getContext(), name + "解析错误", Toast.LENGTH_SHORT).show();
+                                                                        }
+                                                                    });
                                                                 }
-                                                            }.start();
+                                                                try {
+                                                                    sleep(400);
+                                                                } catch (InterruptedException e1) {
+                                                                    e1.printStackTrace();
+                                                                }
+                                                            }
+                                                            editor.commit();
+                                                            waitingDialog.dismiss();
+                                                            db.close();
                                                         }
-                                                    });
-                                                    ChoiceDialog.show();
-                                                }
+                                                    }.start();
+                                                });
+                                                ChoiceDialog.show();
                                             });
                                     }
                                     getGroup.disconnect();
@@ -487,7 +477,7 @@ public class Preferences extends PreferenceFragmentCompat {
 
     private boolean isNotificationListenersEnabled() {
         String pkgName = requireActivity().getPackageName();
-        final String flat = Settings.Secure.getString(getActivity().getContentResolver(), "enabled_notification_listeners");
+        final String flat = Settings.Secure.getString(requireActivity().getContentResolver(), "enabled_notification_listeners");
         if (!TextUtils.isEmpty(flat)) {
             final String[] names = flat.split(":");
             for (String name : names) {

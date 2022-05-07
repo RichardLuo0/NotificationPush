@@ -82,7 +82,7 @@ public class Application extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setTheme(getSharedPreferences("MainActivity", MODE_PRIVATE).getInt("style", R.style.base_DayNight_AppTheme_teal));
+        setTheme(ThemeProvider.getCurrentStyle(this));
         setContentView(R.layout.activity_application);
         Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
         listView = findViewById(R.id.listview);

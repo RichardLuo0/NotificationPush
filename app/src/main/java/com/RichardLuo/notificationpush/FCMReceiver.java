@@ -8,7 +8,9 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
@@ -19,6 +21,7 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.os.Build;
+import android.os.PatternMatcher;
 import android.service.notification.StatusBarNotification;
 import android.util.Log;
 
@@ -26,7 +29,6 @@ import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.app.Person;
-import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.IconCompat;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
@@ -38,24 +40,39 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
 public class FCMReceiver extends FirebaseMessagingService {
-    static Map<String, PendingIntent> Package_Intent = new HashMap<>();
+    static Map<String, PendingIntent> package_Intent = new HashMap<>();
 
     int color = 0;
     Boolean ringForEach;
     NotificationManagerCompat notificationManagerCompat;
 
+    private final BroadcastReceiver br = new QQInstallReceiver();
+
     @Override
     public void onCreate() {
         notificationManagerCompat = NotificationManagerCompat.from(this);
         super.onCreate();
+
+        QQInstallReceiver.findQQPackage(this);
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_PACKAGE_ADDED);
+        filter.addAction(Intent.ACTION_PACKAGE_REMOVED);
+        filter.addDataScheme("package");
+        filter.addDataSchemeSpecificPart("com.tencent", PatternMatcher.PATTERN_LITERAL);
+        registerReceiver(br, filter);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        unregisterReceiver(br);
     }
 
     @Override
@@ -79,7 +96,7 @@ public class FCMReceiver extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
         ringForEach = getDefaultSharedPreferences(this).getBoolean("ringForEach", false);
-        color = ContextCompat.getColor(this, getSharedPreferences("MainActivity", MODE_PRIVATE).getInt("color", R.color.teal));
+        color = ThemeProvider.getCurrentColor(this);
         Map<String, String> data = remoteMessage.getData();
         String title = data.get("title");
         String body = data.get("body");
@@ -96,88 +113,91 @@ public class FCMReceiver extends FirebaseMessagingService {
 
         setChannel(AppName);
 
-        switch (Objects.requireNonNull(packageName)) {
-            case "com.tencent.minihd.qq":
-            case "com.tencent.mobileqqi":
-            case "com.tencent.qqlite":
-            case "com.tencent.tim":
-            case "com.tencent.mobileqq":
-            case "com.jinhaihan.qqnotfandshare":
-                String className = ForegroundMonitor.packageName;
-                if (hide && (className.contains("com.tencent.") && (className.contains("qq") || className.contains("tim"))))
-                    return;
-                String QQpackageName = getSharedPreferences("MainActivity", MODE_PRIVATE).getString("installedQQ", null);
-                intent = getIntent(QQpackageName);
-                if (senderName == null)
-                    break;
-                if (senderName.equals(""))
-                    senderName = "  ";
-                IconCompat icon = null;
-                Bitmap largeIcon = null;
-                if (getDefaultSharedPreferences(this).getBoolean("sendQQ", false) && this.getDatabasePath("friends.db").exists()) {
-                    boolean isfriend = senderName.equals(title);
-                    String encodeSendername = md5(senderName);
-                    File file = new File(this.getCacheDir().getPath() + "/" + encodeSendername);
-                    out:
-                    try {
-                        if (!file.exists()) {
-                            SQLiteDatabase db;
-                            Cursor cursor;
-                            if (isfriend) {
-                                db = SQLiteDatabase.openOrCreateDatabase(this.getDatabasePath("friends.db"), null);
-                                if (getSharedPreferences("groups", MODE_PRIVATE).contains("sync_friends"))
-                                    cursor = db.query("friends", new String[]{"uin"}, "name ='" + senderName + "'", null, null, null, null);
-                                else
-                                    break out;
-                            } else if (getSharedPreferences("groups", MODE_PRIVATE).contains(title)) {
-                                db = SQLiteDatabase.openOrCreateDatabase(this.getDatabasePath("friends.db"), null);
-                                Cursor cursorTemp = db.query("'" + title + "'", new String[]{"uin"}, "name ='" + senderName + "'", null, null, null, null);
-                                if (cursorTemp.getCount() == 0) {
-                                    cursorTemp.close();
-                                    cursor = db.query("friends", new String[]{"uin"}, "name ='" + senderName + "'", null, null, null, null);
-                                } else cursor = cursorTemp;
-                            } else
+        boolean isQQ = false;
+        for (String qqName : Const.QQ_NAMES) {
+            if (qqName.equals(packageName)) {
+                isQQ = true;
+                break;
+            }
+        }
+
+        if (isQQ && senderName != null) {
+            String className = ForegroundMonitor.packageName;
+            String qqPackageName = getSharedPreferences("MainActivity", MODE_PRIVATE).getString("installedQQ", null);
+            intent = getIntent(qqPackageName);
+            if (hide && qqPackageName != null && className.contains(qqPackageName))
+                return;
+            if (senderName.equals(""))
+                senderName = "  ";
+            Bitmap icon = null;
+            Bitmap largeIcon = null;
+            if (getDefaultSharedPreferences(this).getBoolean("sendQQ", false) && this.getDatabasePath("friends.db").exists()) {
+                boolean isfriend = senderName.equals(title);
+                String encodeSendername = "member_" + Utils.md5(senderName);
+                File file = new File(this.getCacheDir().getPath() + "/" + encodeSendername);
+                out:
+                try {
+                    if (!file.exists()) {
+                        SQLiteDatabase db;
+                        Cursor cursor;
+                        if (isfriend) {
+                            db = SQLiteDatabase.openOrCreateDatabase(this.getDatabasePath("friends.db"), null);
+                            if (getSharedPreferences("groups", MODE_PRIVATE).contains("sync_friends"))
+                                cursor = db.query("friends", new String[]{"uin"}, "name ='" + senderName + "'", null, null, null, null);
+                            else
                                 break out;
-                            if (cursor.getCount() != 0) {
-                                if (cursor.moveToFirst()) {
-                                    String QQnumber = cursor.getString(0);
-                                    cursor.close();
-                                    db.close();
-                                    downloadIcon("https://q4.qlogo.cn/g?b=qq&s=140&nk=" + QQnumber, encodeSendername);
-                                }
-                            } else {
+                        } else if (getSharedPreferences("groups", MODE_PRIVATE).contains(title)) {
+                            db = SQLiteDatabase.openOrCreateDatabase(this.getDatabasePath("friends.db"), null);
+                            Cursor cursorTemp = db.query("'" + title + "'", new String[]{"uin"}, "name ='" + senderName + "'", null, null, null, null);
+                            if (cursorTemp.getCount() == 0) {
+                                cursorTemp.close();
+                                cursor = db.query("friends", new String[]{"uin"}, "name ='" + senderName + "'", null, null, null, null);
+                            } else cursor = cursorTemp;
+                        } else
+                            break out;
+                        if (cursor.getCount() != 0) {
+                            if (cursor.moveToFirst()) {
+                                String QQnumber = cursor.getString(0);
                                 cursor.close();
                                 db.close();
-                                break out;
+                                downloadIcon("https://q4.qlogo.cn/g?b=qq&s=140&nk=" + QQnumber, encodeSendername);
                             }
+                        } else {
+                            cursor.close();
+                            db.close();
+                            break out;
                         }
-                        icon = IconCompat.createWithBitmap(BitmapFactory.decodeFile(this.getCacheDir().getPath() + "/" + encodeSendername));
-                    } catch (IOException e) {
-                        Log.e("", e.getMessage(), e);
                     }
-                    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.P)
-                        if (isfriend) {
-                            if (icon != null)
-                                largeIcon = BitmapFactory.decodeFile(this.getCacheDir().getPath() + "/" + encodeSendername);
-                        } else if (new File(this.getCacheDir().getPath() + "/" + title).exists())
-                            largeIcon = BitmapFactory.decodeFile(this.getCacheDir().getPath() + "/" + title);
-                        else {
-                            String groupNumber = getSharedPreferences("groupsNumber", MODE_PRIVATE).getString(title, null);
-                            if (groupNumber != null) {
-                                try {
-                                    largeIcon = downloadIcon("https://p.qlogo.cn/gh/" + groupNumber + "/" + groupNumber + "/100", title);
-                                } catch (IOException e) {
-                                    Log.e(Const.TAG, e.getMessage(), e);
-                                }
+                    icon = BitmapFactory.decodeFile(this.getCacheDir().getPath() + "/" + encodeSendername);
+                } catch (IOException e) {
+                    Log.e("", e.getMessage(), e);
+                }
+                // Large icon
+                if (isfriend) {
+                    if (icon != null)
+                        largeIcon = icon;
+                } else if (title != null) {
+                    String encodeTitle = "group_" + Utils.md5(title);
+                    if (new File(this.getCacheDir().getPath() + "/" + encodeTitle).exists())
+                        largeIcon = BitmapFactory.decodeFile(this.getCacheDir().getPath() + "/" + encodeTitle);
+                    else {
+                        String groupNumber = getSharedPreferences("groupsNumber", MODE_PRIVATE).getString(title, null);
+                        if (groupNumber != null) {
+                            try {
+                                largeIcon = downloadIcon("https://p.qlogo.cn/gh/" + groupNumber + "/" + groupNumber + "/100", encodeTitle);
+                            } catch (IOException e) {
+                                Log.e(Const.TAG, e.getMessage(), e);
                             }
                         }
+                    }
                 }
-                setSummary(packageName, AppName, intent);
-                MessagingStyle(packageName, AppName, title, senderName, body, intent, id, icon, largeIcon);
-                return;
-            default:
-                intent = getIntent(packageName);
-                setSummary(packageName, AppName, intent);
+            }
+            setSummary(packageName, AppName, intent);
+            MessagingStyle(packageName, AppName, title, senderName, body, intent, id, icon == null ? null : IconCompat.createWithBitmap(icon), largeIcon);
+            return;
+        } else {
+            intent = getIntent(packageName);
+            setSummary(packageName, AppName, intent);
         }
 
         Notification notification = new NotificationCompat.Builder(this, AppName == null ? "" : AppName)
@@ -193,28 +213,6 @@ public class FCMReceiver extends FirebaseMessagingService {
                 .setOnlyAlertOnce(!ringForEach)
                 .build();
         notificationManagerCompat.notify(packageName, id, notification);
-    }
-
-    public static String md5(final String s) {
-        final String MD5 = "MD5";
-        try {
-            MessageDigest digest = java.security.MessageDigest
-                    .getInstance(MD5);
-            digest.update(s.getBytes());
-            byte[] messageDigest = digest.digest();
-
-            StringBuilder hexString = new StringBuilder();
-            for (byte aMessageDigest : messageDigest) {
-                StringBuilder h = new StringBuilder(Integer.toHexString(0xFF & aMessageDigest));
-                while (h.length() < 2)
-                    h.insert(0, "0");
-                hexString.append(h);
-            }
-            return hexString.toString();
-        } catch (NoSuchAlgorithmException e) {
-            Log.e(Const.TAG, e.getMessage(), e);
-        }
-        return "unknown";
     }
 
     @SuppressWarnings("SuspiciousNameCombination")
@@ -258,11 +256,11 @@ public class FCMReceiver extends FirebaseMessagingService {
 
     private PendingIntent getIntent(String packageName) {
         PendingIntent intent = null;
-        if (Package_Intent.containsKey(packageName)) {
-            intent = Package_Intent.get(packageName);
+        if (package_Intent.containsKey(packageName)) {
+            intent = package_Intent.get(packageName);
             return intent;
         }
-        if (packageName != null && !packageName.contains("android"))
+        if (packageName != null)
             try {
                 Intent launchIntent = getPackageManager().getLaunchIntentForPackage(packageName);
                 if (launchIntent == null)
@@ -274,10 +272,10 @@ public class FCMReceiver extends FirebaseMessagingService {
                     flags = FLAG_UPDATE_CURRENT;
                 intent = PendingIntent.getActivity(this, 200, launchIntent, flags);
             } catch (Exception e) {
-                Package_Intent.put(packageName, null);
+                package_Intent.put(packageName, null);
                 return null;
             }
-        Package_Intent.put(packageName, intent);
+        package_Intent.put(packageName, intent);
         return intent;
     }
 
@@ -337,7 +335,7 @@ public class FCMReceiver extends FirebaseMessagingService {
                 .setColor(color)
                 .setContentTitle(packageName)
                 .setStyle(style);
-        if (largeIcon != null && android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.P)
+        if (largeIcon != null)
             notification.setLargeIcon(largeIcon);
         notification.setGroup(packageName)
                 .setContentIntent(intent)
